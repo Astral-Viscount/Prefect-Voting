@@ -21,6 +21,7 @@ test.py
 .ipynb_checkpoints
 .jupyter
 .env
+/__pycahce__
 
 # Won't ignore these .exe files
 # !special.exe

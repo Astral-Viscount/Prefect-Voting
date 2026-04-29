@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Prefect Voting</title>
+
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body class="background">
+
+<div class="login-card">
+
+    <h1>Burnside Prefect Voting</h1>
+    <p>Secure Student Authentication</p>
+
+    <div id="g_id_onload"
+         data-client_id="{{ client_id }}"
+         data-callback="handleCredentialResponse">
+    </div>
+
+    <div class="g_id_signin"></div>
+
+    <a href="/" class="back">← Back</a>
+
+</div>
+
+<script src="{{ url_for('static', filename='login.js') }}"></script>
+
+</body>
+</html>
