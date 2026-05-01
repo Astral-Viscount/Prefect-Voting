@@ -57,10 +57,12 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS Votes(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     voter_id INTEGER,
+    position_id INTEGER,
     candidate_id INTEGER,
     time TEXT DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(voter_id, candidate_id),
+    UNIQUE(voter_id, position_id),
     FOREIGN KEY(voter_id) REFERENCES Users(id),
+    FOREIGN KEY(position_id) REFERENCES Positions(id),
     FOREIGN KEY(candidate_id) REFERENCES Candidates(id)
 )
 """)
