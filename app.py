@@ -8,7 +8,20 @@ from google.auth.transport import requests
 load_dotenv()
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "dev-secret-key"
+
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+
+if not app.config["SECRET_KEY"]:
+    raise RuntimeError(
+        "SECRET_KEY is missing"
+        "Please generate a new one by running the secret_token.py file from /utils folder and add it to .env"
+    )
+
+# XSS defense
+app.config["SESSION_COOKIE_HTTPONLY"] = True 
+# CSRF defense
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax" 
+app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 8
 
 DATABASE = "voting.db"
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
