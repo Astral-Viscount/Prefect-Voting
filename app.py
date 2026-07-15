@@ -84,14 +84,14 @@ def verify_google_token(token):
     is_school_account = email.endswith(SCHOOL_DOMAIN)
     is_allowlisted_admin = email in ADMIN_EMAILS
 
-    if not (is_school_account ot is_allowlisted_admin):
+    if not (is_school_account or is_allowlisted_admin):
         return None
 
     return {
         "google_id": idinfo["sub"],
         "email": email,
         "name": idinfo["name"],
-        "should_be_admin": is_allowlisted_admin,
+        "should_be_admin": is_allowlisted_admin
     }
 
 @app.route("/")
@@ -134,16 +134,41 @@ def login_data():
     )
 
     if not user:
+        if user_data["should_be_admin"]:
+            is_admin_val = 1
+        else:
+            is_admin_val = 0
+
         execute_db("""
-            INSERT INTO Users (google_id, email, name)
-            VALUES (?, ?, ?)
+            INSERT INTO Users (google_id, email, name, is_admin)
+            VALUES (?, ?, ?, ?)
         """, (
             user_data["google_id"],
             user_data["email"],
-            user_data["name"]
+            user_data["name"],
+            is_admin_val
         ))
 
-    session["user_email"] = user_data["email"]
+        user = query_db(
+            "SELECT * FROM Users WHERE google_id=?",
+            (user_data["google_id"],),
+            one=True
+        )
+    else:
+        if user_data["should_be_admin"] and not user["is_admin"]:
+            execute_db("UPDATE Users SET is_admin=1 WHERE id=?", (user["id"],))
+
+        if user["name"] != user_data["name"]:
+            execute_db("UPDATE Users SET name=? WHERE id=?", (user_data["name"], user["id"]))
+
+        user = query_db("SELECT * FROM Users WHERE id=?", (user["id"],), one=True)
+
+    session.clear()
+    session.permanent = True
+    session["user_email"] = user["email"]
+    session["user_id"] = user["id"]
+    session["user_name"] = user["name"]
+    session["is_admin"] = bool(user["is_admin"])
 
     return jsonify({"success": True})
 
