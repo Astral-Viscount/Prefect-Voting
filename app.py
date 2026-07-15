@@ -234,10 +234,31 @@ def logout():
     return redirect("/")
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    if "user_email" not in session:
-        return redirect("/")
-    return f"Logged in as {session['user_email']}"
+    user = get_current_user()
+    
+    if user["is_admin"]:
+        return redirect("/admin")
+    if is_candidate(user["id"]):
+        return redirect("/candidate")
+    
+    return redirect("/voter")
+
+@app.route("/voter")
+@login_required
+def voter_dashboard():
+    return "Voter dashboard"
+
+@app.route("/candidate")
+@candidate_required
+def candidate_dashboard():
+    return "Candidate dashboard"
+
+@app.route("/admin")
+@admin_required
+def admin_dashboard():
+    return "Admin dashboard"
 
 if __name__ == "__main__":
     app.run(debug=True)
