@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, redirect, request, jsonify, g, abort
+from flask import Flask, render_template, session, redirect, request, jsonify, g, abort, flash
 import sqlite3
 import os
 from dotenv import load_dotenv
@@ -9,6 +9,7 @@ import json
 import secrets as secrets_lib
 from pathlib import Path
 from datetime import datetime
+from werkzeug.utils import secure_filename
 
 # replaces any old env varible with the new one
 load_dotenv(override=True)
@@ -50,6 +51,14 @@ SCHOOL_DOMAIN = os.getenv("SCHOOL_DOMAIN", "@burnside.school.nz").lower()
 
 DATABASE = "voting.db"
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+
+# Candidate info
+UPLOAD_FOLDER = os.path.join("static", "uploads", "candidates")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp"}
+ALLOWED_AUDIO_EXT = {"webm", "mp3", "wav", "ogg"}
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024 # 8 MB
+
 
 def get_db():
     db = getattr(g, "_database", None)
@@ -148,7 +157,6 @@ def candidate_required(view):
         return view(*args, **kwargs)
 
     return wrapped
-
 
 def admin_required(view):
     @wraps(view)
@@ -336,7 +344,25 @@ def cast_vote(position_id, candidate_id):
 @app.route("/candidate")
 @candidate_required
 def candidate_dashboard():
-    return "Candidate dashboard"
+    user = get_current_user()
+    election = get_active_election()
+
+    candidate_row = query_db("""
+        SELECT Candidates.*, Positions.position_name, Positions.election_id
+        FROM Candidates JOIN Positions ON Candidates.position_id = Positions.id
+        WHERE Candidates.user_id = ?
+    """, (user["id"],), one=True)
+
+    vote_count = None
+
+    if candidate_row and election and candidate_row["election_id"] == election["id"] and not election["is_active"]:
+
+        row = query_db("SELECT COUNT(*) as c FROM Votes WHERE candidate_id=?", (candidate_row["id"],), one=True)
+        vote_count = row["c"]
+
+    media = json.loads(candidate_row["photo"]) if candidate_row and candidate_row["photo"] else {}
+
+    return render_template("candidate_dashboard.html", user=user, candidate=candidate_row, media=media, vote_count=vote_count)
 
 @app.route("/admin")
 @admin_required
