@@ -23,6 +23,24 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax" 
 app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 8
 
+""" Initial approach
+ADMIN_EMAILS = set()
+
+for e in os.getenv("ADMIN_EMAILS", "").split(","):
+    if e.strip():
+        e = e.strip().lower()
+    ADMIN_EMAILS.add(e)
+"""
+
+# More efficient as it uses a set comprehension
+ADMIN_EMAILS = {
+    e.strip().lower()
+    for e in os.getenv("ADMIN_EMAILS", "").split(",")
+    if e.strip()
+}
+
+SCHOOL_DOMAIN = os.getenv("SCHOOL_DOMAIN", "@burnside.school.nz").lower()
+
 DATABASE = "voting.db"
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 
@@ -61,22 +79,19 @@ def verify_google_token(token):
         GOOGLE_CLIENT_ID
     )
 
-    email = idinfo["email"]
+    email = idinfo["email"].lower()
 
-    allowed_test_accounts = [
-        "md.mahatabmahimn@gmail.com"
-    ]
+    is_school_account = email.endswith(SCHOOL_DOMAIN)
+    is_allowlisted_admin = email in ADMIN_EMAILS
 
-    if not (
-        email.endswith("@burnside.school.nz")
-        or email in allowed_test_accounts
-    ):
+    if not (is_school_account ot is_allowlisted_admin):
         return None
 
     return {
         "google_id": idinfo["sub"],
         "email": email,
-        "name": idinfo["name"]
+        "name": idinfo["name"],
+        "should_be_admin": is_allowlisted_admin,
     }
 
 @app.route("/")
