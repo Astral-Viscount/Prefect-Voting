@@ -299,6 +299,40 @@ def voter_dashboard():
     return render_template(
         "voter_dashboard.html", user=user, election=election, positions=positions, voting_open=is_open, voting_message=message)
 
+@app.route("/vote/<int:position_id>/<int:candidate_id>", methods=["POST"])
+@login_required
+def cast_vote(position_id, candidate_id):
+    user = get_current_user()
+    election = get_active_election()
+    is_open, message = voting_is_open(election)
+
+    if not is_open:
+        return jsonify({"error": message}), 403
+
+    position = query_db("SELECT * FROM Positions WHERE id=?", (position_id,), one=True)
+
+    if not position or position["election_id"] != election["id"]:
+        return jsonify({"error": "Invalid position for the current election."}), 400
+
+    candidate = query_db(
+        "SELECT * FROM Candidates WHERE id=? AND position_id=?",
+        (candidate_id, position_id), one=True
+    )
+
+    if not candidate:
+        return jsonify({"error": "Invalid candidate for this position."}), 400
+
+    try:
+        execute_db(
+            "INSERT INTO Votes (voter_id, position_id, candidate_id) VALUES (?, ?, ?)",
+            (user["id"], position_id, candidate_id)
+        )
+        
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "You have already voted for this position."}), 409
+
+    return jsonify({"success": True})
+
 @app.route("/candidate")
 @candidate_required
 def candidate_dashboard():
