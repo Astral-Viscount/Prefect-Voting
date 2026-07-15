@@ -28,6 +28,10 @@ body {
     color: #16221e;
 }
 
+.login-card {
+    color: var(--bhs-glacier-green);
+}
+
 .site-header {
     display: flex;
     justify-content: space-between;
