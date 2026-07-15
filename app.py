@@ -113,6 +113,9 @@ def is_candidate(user_id):
     
     return row is not None
 
+def get_active_election():
+    return query_db("SLELCT * FROM Election WHERE is_active=1", one=True)
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -253,7 +256,48 @@ def dashboard():
 @app.route("/voter")
 @login_required
 def voter_dashboard():
-    return "Voter dashboard"
+    user = get_current_user()
+    election = get_active_election()
+    is_open, message = voting_is_open(election)
+
+    positions = []
+
+    if election:
+        raw_position = query_db("SELECT * FROM Positions WHERE election_id=?", (election["id"],))
+
+        for pos in raw_position:
+            candidates = query_db("""
+                SELECT Candidates.id AS candidate_id, Candidates.bio, Candidates.photo,
+                    Users.name AS candidate_name
+                FROM Candidates
+                JOIN Users ON Candidates.user_id = Users.id
+                WHERE Candidates.position_id = ?
+            """, (pos["id"],))
+
+        candidates_list = []
+
+        for c in candidates:
+            media = json.loads(c["photo"]) if c["photo"] else {}
+            candidates_list.append({
+                    "id": c["candidate_id"],
+                    "name": c["candidate_name"],
+                    "bio": c["bio"],
+                    "media": media,
+            })
+        
+        already_voted = query_db(
+            "SELECT id FROM Votes WHERE voter_id=? AND position_id=?",
+            (user["id"], pos["id"]), one=True
+        )
+
+        positions.append({
+            "position": pos,
+            "candidates": candidate_list,
+            "has_voted": already_voted is not None,
+        })
+
+    return render_template(
+        "voter_dashboard.html", user=user, election=election, positions=positions, voting_open=is_open, voting_message=message)
 
 @app.route("/candidate")
 @candidate_required
@@ -291,9 +335,6 @@ def inject_csrf_token():
         session["csrf_token"] = secrets_lib.token_hex(32)
         
     return dict(csrf_token=session["csrf_token"])
-
-def get_active_election():
-    return query_db("SLELCT * FROM Election WHERE is_active=1", one=True)
 
 def parse_date(value):
     if not value:
