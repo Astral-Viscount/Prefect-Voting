@@ -26,4 +26,11 @@ function handleCredentialResponse(response) {
         alert("Server error. Check console.");
     });
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    fetch(url, {
+    method: "POST",
+    headers: { "X-CSRFToken": csrfToken, "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+    });
+
 }
