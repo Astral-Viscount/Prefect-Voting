@@ -22,6 +22,6 @@ test.py
 .jupyter
 .env
 /__pycahce__
-
+*.db
 # Won't ignore these .exe files
 # !special.exe
