@@ -1,15 +1,28 @@
+:root {
+    --bhs-pounamu: #004E42;
+    --bhs-bush-green: #003A2C;
+    --bhs-glacier-green: #00AB8E;
+    --bhs-deep-sea-blue: #00384E;
+    --bhs-white: #FFFFFF;
+    --bhs-gold-accent: #EBC234;
+    --font-brand: 'Public Sans', -apple-system, sans-serif;
+
+    --radius: 14px;
+    --shadow: 0 10px 25px rgba(0, 30, 25, 0.15);
+}
+
 * {
     box-sizing: border-box;
 }
 
 body {
-    font-family: 'Public Sans', -apple-system, sans-serif;
+    font-family: var(--font-brand);
     margin: 0;
     min-height: 100vh;
     background: linear-gradient(
         180deg,
-        #004E42 0%,
-        #003A2C 340px,
+        var(--bhs-pounamu) 0%,
+        var(--bhs-bush-green) 340px,
         #f4f8f6 340px
     );
     color: #16221e;
@@ -20,11 +33,11 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 24px 40px;
-    color: #FFFFFF;
+    color: var(--bhs-white);
 }
 
 .brand {
-    color: #FFFFFF;
+    color: var(--bhs-white);
     text-decoration: none;
     display: flex;
     flex-direction: column;
@@ -49,7 +62,7 @@ body {
 }
 
 .site-nav a {
-    color: #FFFFFF;
+    color: var(--bhs-white);
     text-decoration: none;
     font-weight: 500;
 }
@@ -71,9 +84,9 @@ body {
 }
 
 .main-card, .card {
-    background: #FFFFFF;
-    border-radius: 14px;
-    box-shadow: 0 10px 25px rgba(0, 30, 25, 0.15);
+    background: var(--bhs-white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
     padding: 32px;
     margin: 24px auto;
 }
@@ -105,29 +118,29 @@ body {
 }
 
 .btn.pounamu {
-    background: #004E42;
-    color: #FFFFFF;
+    background: var(--bhs-pounamu);
+    color: var(--bhs-white);
 }
 
 .btn.glacier {
-    background: #00AB8E;
-    color: #FFFFFF;
+    background: var(--bhs-glacier-green);
+    color: var(--bhs-white);
 }
 
 .btn.gold {
-    background: #EBC234;
+    background: var(--bhs-gold-accent);
     color: #3a2f00;
 }
 
 .btn.danger {
     background: #c0392b;
-    color: #FFFFFF;
+    color: var(--bhs-white);
 }
 
 .btn.outline {
     background: transparent;
     border-color: currentColor;
-    color: #004E42;
+    color: var(--bhs-pounamu);
 }
 
 .btn.small {
@@ -144,18 +157,18 @@ body {
 }
 
 .badge.admin {
-    background: #EBC234;
+    background: var(--bhs-gold-accent);
     color: #3a2f00;
 }
 
 .badge.candidate {
-    background: #00AB8E;
+    background: var(--bhs-glacier-green);
     color: white;
 }
 
 .badge.voter {
     background: #e3ece9;
-    color: #003A2C;
+    color: var(--bhs-bush-green);
 }
 
 .flash-stack {
@@ -201,12 +214,12 @@ th, td {
 }
 
 th {
-    color: #003A2C;
+    color: var(--bhs-bush-green);
     font-weight: 700;
 }
 
 input, select, textarea {
-    font-family: 'Public Sans', -apple-system, sans-serif;
+    font-family: var(--font-brand);
     padding: 10px 12px;
     border-radius: 8px;
     border: 1.5px solid #d6e0db;
@@ -218,7 +231,7 @@ label {
     display: block;
     font-weight: 600;
     margin: 12px 0 4px;
-    color: #003A2C;
+    color: var(--bhs-bush-green);
 }
 
 .error-page {
