@@ -114,7 +114,7 @@ def is_candidate(user_id):
     return row is not None
 
 def get_active_election():
-    return query_db("SLELCT * FROM Election WHERE is_active=1", one=True)
+    return query_db("SELECT * FROM Election WHERE is_active=1", one=True)
 
 def login_required(view):
     @wraps(view)
