@@ -24,10 +24,12 @@
 
         {% if session.get('user_id') %}
         <nav class="site-nav">
-            <a href="/dashboard">Dashboard</a>
-
             {% if session.get('is_admin') %}
-            <a href="/admin">Admin</a>
+                <a href="/admin">Dashboard</a>
+
+            {% else %}
+                <a href="/dashboard">Dashboard</a>
+                
             {% endif %}
 
             <span class="nav-user">{{ session.get('user_name') }}</span>
