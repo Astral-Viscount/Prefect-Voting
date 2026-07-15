@@ -260,5 +260,13 @@ def candidate_dashboard():
 def admin_dashboard():
     return "Admin dashboard"
 
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("404.html"), 404
+
+@app.errorhandler(403)
+def forbidden(e):
+    return render_template("403.html"), 403
+
 if __name__ == "__main__":
     app.run(debug=True)
