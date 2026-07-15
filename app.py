@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, redirect, request, jsonify, g
+from flask import Flask, render_template, session, redirect, request, jsonify, g, abort
 import sqlite3
 import os
 from dotenv import load_dotenv
@@ -6,6 +6,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from functools import wraps
 import json
+import secrets as secrets_lib
 
 load_dotenv()
 
@@ -267,6 +268,25 @@ def not_found(e):
 @app.errorhandler(403)
 def forbidden(e):
     return render_template("403.html"), 403
+
+@app.before_request
+def csrf_protect():
+    if request.method == "POST":
+        if request.path == "/login":
+            return
+
+        token = session.get("csrf_token")
+        sent_token = request.form.get("csrf_token") or request.headers.get("X-CSRFToken")
+        
+        if not token or not sent_token or not secrets_lib.compare_digest(token, sent_token):
+            abort(403)
+
+@app.context_processor
+def inject_csrf_token():
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets_lib.token_hex(32)
+        
+    return dict(csrf_token=session["csrf_token"])
 
 if __name__ == "__main__":
     app.run(debug=True)
