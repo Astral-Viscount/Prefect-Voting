@@ -8,6 +8,7 @@ from functools import wraps
 import json
 import secrets as secrets_lib
 from pathlib import Path
+from datetime import datetime
 
 # replaces any old env varible with the new one
 load_dotenv(override=True)
@@ -290,6 +291,33 @@ def inject_csrf_token():
         session["csrf_token"] = secrets_lib.token_hex(32)
         
     return dict(csrf_token=session["csrf_token"])
+
+def get_active_election():
+    return query_db("SLELCT * FROM Election WHERE is_active=1", one=True)
+
+def parse_date(value):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return datetime.fromisoformat(value + ":00")
+
+def voting_is_open(election):
+    if not election or not election["is_active"]:
+        return False, "No current election running"
+
+    now = datetime.now()
+    start = parse_date(election["start_date"])
+    end = parse_date(election["end_date"])
+
+    if start and now < start:
+        return False, f"Voting starts {start.strftime('%d %b %Y, %I:%M %p')}"
+    
+    if end and now > end:
+        return False, "Voting has stopped for this election"
+    
+    return True, None
 
 if __name__ == "__main__":
     app.run(debug=True)
