@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 from google.oauth2 import id_token
 from google.auth.transport import requests
+from functools import wraps
+import json
 
 load_dotenv()
 
@@ -94,6 +96,69 @@ def verify_google_token(token):
         "should_be_admin": is_allowlisted_admin
     }
 
+# Wrapper functions
+def get_current_user():
+    if "user_id" not in session:
+        return None
+
+    return query_db("SELECT * FROM Users Where id=?", (session["user_id"],), one=True)
+
+def is_candidate(user_id):
+    row = query_db("SELECT id FROM Candidates WHERE user_id=?", (user_id,), one=True)
+    
+    return row is not None
+
+def login_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect("/login")
+        
+        user = get_current_user()
+        if user is None:
+            session.clear()
+            return redirect("/login")
+
+        return view(*args, **kwargs)
+
+    return wrapped
+
+def candidate_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect("/login")
+
+        user = get_current_user()
+        if user is None:
+            session.clear()
+            return redirect("/login")
+
+        if not is_candidate(user["id"]):
+            return render_template("403.html"), 403
+
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def admin_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect("/login")
+
+        user = get_current_user()
+        if user is None:
+            session.clear()
+            return redirect("/login")
+        if not user["is_admin"]:
+            return render_template("403.html"), 403
+
+        return view(*args, **kwargs)
+
+    return wrapped
+
 @app.route("/")
 def home():
     return render_template(
@@ -101,21 +166,12 @@ def home():
         user=session.get("user_email")
     )
 
-
-@app.route("/dashboard")
-def dashboard():
-    if "user_email" not in session:
-        return redirect("/")
-    return f"Logged in as {session['user_email']}"
-
-
 @app.route("/login")
 def login_page():
     return render_template(
         "login.html",
         client_id=GOOGLE_CLIENT_ID
     )
-
 
 @app.route("/login", methods=["POST"])
 def login_data():
@@ -176,6 +232,12 @@ def login_data():
 def logout():
     session.clear()
     return redirect("/")
+
+@app.route("/dashboard")
+def dashboard():
+    if "user_email" not in session:
+        return redirect("/")
+    return f"Logged in as {session['user_email']}"
 
 if __name__ == "__main__":
     app.run(debug=True)
