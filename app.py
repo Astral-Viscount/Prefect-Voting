@@ -364,6 +364,54 @@ def candidate_dashboard():
 
     return render_template("candidate_dashboard.html", user=user, candidate=candidate_row, media=media, vote_count=vote_count)
 
+@app.route("/candidate/profile", methods=["GET", "POST"])
+@candidate_required
+def candidate_profile():
+    user = get_current_user()
+    candidate_row = query_db("SELECT * FROM Candidates WHERE user_id=?", (user["id"],), one=True)
+
+    media = json.loads(candidate_row["photo"]) if candidate_row["photo"] else {}
+
+    if request.method == "POST":
+        bio = request.form.get("bio", "").strip()[:2000]
+        video_url = request.form.get("video_url", "").strip()[:500]
+
+        if video_url:
+            media["video_url"] = video_url
+
+        photo_file = request.files.get("photo_file")
+
+        if photo_file and photo_file.filename:
+            ext = photo_file.filename.rsplit(".", 1)[-1].lower()
+
+            if ext in ALLOWED_IMAGE_EXT:
+                filename = secure_filename(f"candidate_{candidate_row['id']}_photo.{ext}")
+                photo_file.save(os.path.join(UPLOAD_FOLDER, filename))
+                media["photo"] = f"/static/uploads/candidates/{filename}"
+            else:
+                flash("Photo must be PNG, JPG or WEBP.", "error")
+
+        voice_file = request.files.get("voice_file")
+
+        if voice_file and voice_file.filename:
+            ext = voice_file.filename.rsplit(".", 1)[-1].lower()
+
+            if ext in ALLOWED_AUDIO_EXT:
+                filename = secure_filename(f"candidate_{candidate_row['id']}_voice.{ext}")
+                voice_file.save(os.path.join(UPLOAD_FOLDER, filename))
+                media["voice"] = f"/static/uploads/candidates/{filename}"
+            else:
+                flash("Voice clip must be webm, mp3, wav or ogg.", "error")
+
+        execute_db("UPDATE Candidates SET bio=?, photo=? WHERE id=? AND user_id=?",
+                   (bio, json.dumps(media), candidate_row["id"], user["id"]))
+
+        flash("Profile updated.", "success")
+
+        return redirect("/candidate")
+
+    return render_template("candidate_profile.html", candidate=candidate_row, media=media)
+
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
