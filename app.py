@@ -7,8 +7,10 @@ from google.auth.transport import requests
 from functools import wraps
 import json
 import secrets as secrets_lib
+from pathlib import Path
 
-load_dotenv()
+# replaces any old env varible with the new one
+load_dotenv(override=True)
 
 app = Flask(__name__)
 
@@ -43,6 +45,7 @@ ADMIN_EMAILS = {
 }
 
 SCHOOL_DOMAIN = os.getenv("SCHOOL_DOMAIN", "@burnside.school.nz").lower()
+# print(f"debug: school domain = {SCHOOL_DOMAIN!r}")
 
 DATABASE = "voting.db"
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
