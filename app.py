@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, redirect, request, jsonify, g, abort
+from flask import Flask, render_template, session, redirect, request, jsonify, g, abort, flash
 import sqlite3
 import os
 from dotenv import load_dotenv
@@ -8,8 +8,10 @@ from functools import wraps
 import json
 import secrets as secrets_lib
 from pathlib import Path
+from datetime import datetime
+from werkzeug.utils import secure_filename
 
-# replaces any old env varible with the new one
+# replaces any old env variable with the new one
 load_dotenv(override=True)
 
 app = Flask(__name__)
@@ -49,6 +51,14 @@ SCHOOL_DOMAIN = os.getenv("SCHOOL_DOMAIN", "@burnside.school.nz").lower()
 
 DATABASE = "voting.db"
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+
+# Candidate info
+UPLOAD_FOLDER = os.path.join("static", "uploads", "candidates")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp"}
+ALLOWED_AUDIO_EXT = {"webm", "mp3", "wav", "ogg"}
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024 # 8 MB
+
 
 def get_db():
     db = getattr(g, "_database", None)
@@ -112,6 +122,9 @@ def is_candidate(user_id):
     
     return row is not None
 
+def get_active_election():
+    return query_db("SELECT * FROM Election WHERE is_active=1", one=True)
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -144,7 +157,6 @@ def candidate_required(view):
         return view(*args, **kwargs)
 
     return wrapped
-
 
 def admin_required(view):
     @wraps(view)
@@ -252,12 +264,152 @@ def dashboard():
 @app.route("/voter")
 @login_required
 def voter_dashboard():
-    return "Voter dashboard"
+    user = get_current_user()
+    election = get_active_election()
+    is_open, message = voting_is_open(election)
+
+    positions = []
+
+    if election:
+        raw_position = query_db("SELECT * FROM Positions WHERE election_id=?", (election["id"],))
+
+        for pos in raw_position:
+            candidates = query_db("""
+                SELECT Candidates.id AS candidate_id, Candidates.bio, Candidates.photo,
+                    Users.name AS candidate_name
+                FROM Candidates
+                JOIN Users ON Candidates.user_id = Users.id
+                WHERE Candidates.position_id = ?
+            """, (pos["id"],))
+
+        candidates_list = []
+
+        for c in candidates:
+            media = json.loads(c["photo"]) if c["photo"] else {}
+            candidates_list.append({
+                    "id": c["candidate_id"],
+                    "name": c["candidate_name"],
+                    "bio": c["bio"],
+                    "media": media,
+            })
+        
+        already_voted = query_db(
+            "SELECT id FROM Votes WHERE voter_id=? AND position_id=?",
+            (user["id"], pos["id"]), one=True
+        )
+
+        positions.append({
+            "position": pos,
+            "candidates": candidate_list,
+            "has_voted": already_voted is not None,
+        })
+
+    return render_template("voter_dashboard.html", user=user, election=election, positions=positions, voting_open=is_open, voting_message=message)
+
+@app.route("/vote/<int:position_id>/<int:candidate_id>", methods=["POST"])
+@login_required
+def cast_vote(position_id, candidate_id):
+    user = get_current_user()
+    election = get_active_election()
+    is_open, message = voting_is_open(election)
+
+    if not is_open:
+        return jsonify({"error": message}), 403
+
+    position = query_db("SELECT * FROM Positions WHERE id=?", (position_id,), one=True)
+
+    if not position or position["election_id"] != election["id"]:
+        return jsonify({"error": "Invalid position for the current election."}), 400
+
+    candidate = query_db(
+        "SELECT * FROM Candidates WHERE id=? AND position_id=?",
+        (candidate_id, position_id), one=True
+    )
+
+    if not candidate:
+        return jsonify({"error": "Invalid candidate for this position."}), 400
+
+    try:
+        execute_db(
+            "INSERT INTO Votes (voter_id, position_id, candidate_id) VALUES (?, ?, ?)",
+            (user["id"], position_id, candidate_id)
+        )
+        
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "You have already voted for this position."}), 409
+
+    return jsonify({"success": True})
 
 @app.route("/candidate")
 @candidate_required
 def candidate_dashboard():
-    return "Candidate dashboard"
+    user = get_current_user()
+    election = get_active_election()
+
+    candidate_row = query_db("""
+        SELECT Candidates.*, Positions.position_name, Positions.election_id
+        FROM Candidates JOIN Positions ON Candidates.position_id = Positions.id
+        WHERE Candidates.user_id = ?
+    """, (user["id"],), one=True)
+
+    vote_count = None
+
+    if candidate_row and election and candidate_row["election_id"] == election["id"] and not election["is_active"]:
+
+        row = query_db("SELECT COUNT(*) as c FROM Votes WHERE candidate_id=?", (candidate_row["id"],), one=True)
+        vote_count = row["c"]
+
+    media = json.loads(candidate_row["photo"]) if candidate_row and candidate_row["photo"] else {}
+
+    return render_template("candidate_dashboard.html", user=user, candidate=candidate_row, media=media, vote_count=vote_count)
+
+@app.route("/candidate/profile", methods=["GET", "POST"])
+@candidate_required
+def candidate_profile():
+    user = get_current_user()
+    candidate_row = query_db("SELECT * FROM Candidates WHERE user_id=?", (user["id"],), one=True)
+
+    media = json.loads(candidate_row["photo"]) if candidate_row["photo"] else {}
+
+    if request.method == "POST":
+        bio = request.form.get("bio", "").strip()[:2000]
+        video_url = request.form.get("video_url", "").strip()[:500]
+
+        if video_url:
+            media["video_url"] = video_url
+
+        photo_file = request.files.get("photo_file")
+
+        if photo_file and photo_file.filename:
+            ext = photo_file.filename.rsplit(".", 1)[-1].lower()
+
+            if ext in ALLOWED_IMAGE_EXT:
+                filename = secure_filename(f"candidate_{candidate_row['id']}_photo.{ext}")
+                photo_file.save(os.path.join(UPLOAD_FOLDER, filename))
+                media["photo"] = f"/static/uploads/candidates/{filename}"
+            else:
+                flash("Photo must be PNG, JPG or WEBP.", "error")
+
+        voice_file = request.files.get("voice_file")
+
+        if voice_file and voice_file.filename:
+            ext = voice_file.filename.rsplit(".", 1)[-1].lower()
+
+            if ext in ALLOWED_AUDIO_EXT:
+                filename = secure_filename(f"candidate_{candidate_row['id']}_voice.{ext}")
+                voice_file.save(os.path.join(UPLOAD_FOLDER, filename))
+                media["voice"] = f"/static/uploads/candidates/{filename}"
+            else:
+                flash("Voice clip must be webm, mp3, wav or ogg.", "error")
+
+        execute_db("UPDATE Candidates SET bio=?, photo=? WHERE id=? AND user_id=?",
+                   (bio, json.dumps(media), candidate_row["id"], user["id"]))
+
+        flash("Profile updated.", "success")
+
+        return redirect("/candidate")
+
+    return render_template("candidate_profile.html", candidate=candidate_row, media=media)
 
 @app.route("/admin")
 @admin_required
@@ -290,6 +442,174 @@ def inject_csrf_token():
         session["csrf_token"] = secrets_lib.token_hex(32)
         
     return dict(csrf_token=session["csrf_token"])
+
+def parse_date(value):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return datetime.fromisoformat(value + ":00")
+
+def voting_is_open(election):
+    if not election or not election["is_active"]:
+        return False, "No current election running"
+
+    now = datetime.now()
+    start = parse_date(election["start_date"])
+    end = parse_date(election["end_date"])
+
+    if start and now < start:
+        return False, f"Voting starts {start.strftime('%d %b %Y, %I:%M %p')}"
+    
+    if end and now > end:
+        return False, "Voting has stopped for this election"
+    
+    return True, None
+
+@app.route("/admin/elections", methods=["GET", "POST"])
+@admin_required
+def admin_elections():
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "create":
+            execute_db("""
+                INSERT INTO Election (title, description, start_date, end_date, is_active)
+                VALUES (?, ?, ?, ?, 0)
+            """, (
+                request.form.get("title", "").strip(),
+                request.form.get("description", "").strip(),
+                request.form.get("start_date") or None,
+                request.form.get("end_date") or None,
+            ))
+
+            flash("Election created.", "success")
+
+        elif action == "toggle_active":
+            election_id = request.form.get("election_id")
+
+            execute_db("UPDATE Election SET is_active = 0")
+            execute_db("UPDATE Election SET is_active = 1 WHERE id = ?", (election_id,))
+
+            flash("Election activated. All other elections were deactivated.", "success")
+
+        elif action == "deactivate":
+            election_id = request.form.get("election_id")
+
+            execute_db("UPDATE Election SET is_active = 0 WHERE id = ?", (election_id,))
+
+            flash("Election closed.", "info")
+
+        elif action == "update_dates":
+            execute_db("""
+                UPDATE Election SET title=?, description=?, start_date=?, end_date=?
+                WHERE id=?
+            """, (
+                request.form.get("title", "").strip(),
+                request.form.get("description", "").strip(),
+                request.form.get("start_date") or None,
+                request.form.get("end_date") or None,
+                request.form.get("election_id"),
+            ))
+
+            flash("Election updated.", "success")
+
+        return redirect("/admin/elections")
+
+    elections = query_db("SELECT * FROM Election ORDER BY id DESC")
+
+    return render_template("admin_elections.html", elections=elections)
+
+@app.route("/admin/positions", methods=["GET", "POST"])
+@admin_required
+def admin_positions():
+    election_id = request.values.get("election_id", type=int)
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "create":
+
+            execute_db(
+                "INSERT INTO Positions (election_id, position_name, max_votes) VALUES (?, ?, ?)",
+                (request.form.get("election_id"), request.form.get("position_name", "").strip(),
+                 request.form.get("max_votes", 1))
+            )
+
+            flash("Position added.", "success")
+
+        elif action == "delete":
+            execute_db("DELETE FROM Positions WHERE id=?", (request.form.get("position_id"),))
+
+            flash("Position removed.", "info")
+
+        return redirect(f"/admin/positions?election_id={election_id}")
+
+    elections = query_db("SELECT * FROM Election ORDER BY id DESC")
+
+    if election_id:
+        positions = query_db("SELECT * FROM Positions WHERE election_id=?",(election_id,))
+    else:
+        positions = []
+
+    return render_template("admin_positions.html", elections=elections, positions=positions, election_id=election_id)
+
+@app.route("/admin/candidates", methods=["GET", "POST"])
+@admin_required
+def admin_candidates():
+    election_id = request.values.get("election_id", type=int)
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        
+        if action == "assign":
+            email = request.form.get("student_email", "").strip().lower()
+            student = query_db("SELECT * FROM Users WHERE email=?", (email,), one=True)
+
+            if not student:
+                flash("That email hasn't logged into the site yet. Ask them to sign in once first.", "error")
+            else:
+                existing = query_db(
+                    "SELECT id FROM Candidates WHERE user_id=? AND position_id=?",
+                    (student["id"], request.form.get("position_id")), one=True
+                )
+                if existing:
+                    flash("That student is already a candidate for this position.", "error")
+                else:
+                    execute_db(
+                        "INSERT INTO Candidates (position_id, user_id, bio, photo) VALUES (?, ?, '', '{}')",
+                        (request.form.get("position_id"), student["id"])
+                    )
+                    
+                    flash(f"{student['name']} added as a candidate.", "success")
+
+        elif action == "remove":
+            execute_db("DELETE FROM Candidates WHERE id=?", (request.form.get("candidate_id"),))
+
+            flash("Candidate removed.", "info")
+
+        return redirect(f"/admin/candidates?election_id={election_id}")
+
+    elections = query_db("SELECT * FROM Election ORDER BY id DESC")
+
+    if election_id:
+        positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election_id,))
+    else:
+        positions = []
+
+    candidates = []
+
+    if election_id:
+        candidates = query_db("""
+            SELECT Candidates.id, Candidates.bio, Positions.position_name, Users.name, Users.email
+            FROM Candidates
+            JOIN Positions ON Candidates.position_id = Positions.id
+            JOIN Users ON Candidates.user_id = Users.id
+            WHERE Positions.election_id = ?
+        """, (election_id,))
+
+    return render_template("admin_candidates.html", elections=elections, positions=positions, candidates=candidates, election_id=election_id)
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Edit My Candidate Profile
+{% endblock %}
+
+{% block content %}
+<div class="card">
+
+    <h2>Edit My Profile</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <label for="bio">About me</label>
+        <textarea id="bio" name="bio" rows="6" maxlength="2000">{{ candidate.bio or "" }}</textarea>
+
+        <label for="photo_file">Profile photo</label>
+
+        {% if media.photo %}
+        <img src="{{ media.photo }}" class="candidate-photo" style="display:block;margin-bottom:8px;">
+        {% endif %}
+        
+        <input type="file" id="photo_file" name="photo_file" accept="image/png,image/jpeg,image/webp">
+
+        <label for="video_url">Introduction video link (optional — e.g. an unlisted YouTube link)</label>
+        <input type="url" id="video_url" name="video_url" value="{{ media.video_url or '' }}" placeholder="https://youtube.com/...">
+
+        <label>Voice introduction (optional)</label>
+
+        {% if media.voice %}
+        <audio controls src="{{ media.voice }}" style="display:block;margin-bottom:8px;width:100%;"></audio>
+        {% endif %}
+
+        <button type="button" id="recordBtn" class="btn outline small">Record a voice introduction</button>
+
+        <audio id="preview" controls style="display:none;width:100%;margin-top:8px;"></audio>
+        <input type="file" id="voiceFileInput" name="voice_file" accept="audio/*" style="display:none;">
+
+        <div style="margin-top:20px;">
+            <button type="submit" class="btn glacier">Save Profile</button>
+            <a href="/candidate" class="btn outline">Cancel</a>
+        </div>
+
+    </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/candidate_profile.js') }}"></script>
+
+{% endblock %}

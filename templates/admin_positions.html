@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}
+Manage Positions
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Manage Positions</h2>
+
+<form method="GET" style="margin-bottom: 18px;">
+
+    <label>Select Election</label>
+
+    <select name="election_id" onchange="this.form.submit()" required>
+        <option value="">Choose an election</option>
+
+        {% for e in elections %}
+            <option value="{{ e.id }}" 
+                    {% if election_id == e.id %}
+                    selected
+                    {% endif %}
+            >
+                {{ e.title }}
+            </option>
+
+        {% endfor %}
+
+    </select>
+
+</form>
+
+{% if election_id %}
+
+    <h3>Create Position</h3>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" value="create">
+        <input type="hidden" name="election_id" value="{{ election_id }}">
+
+        <label>Position name</label>
+        <input type="text" name="position_name" required>
+
+        <label>Max votes</label>
+        <input type="number" name="max_votes" min="1" value="1" required>
+
+        <button type="submit" class="btn glacier" style="margin-top:14px;">Add Position</button>
+    </form>
+
+{% else %}
+    <p>Please choose an election first to add and manage positions.</p>
+
+{% endif %}
+
+</div>
+
+<div class="card">
+    <h2>Positions {% if election_id %}for Selected Election{% endif %}</h2>
+
+{% if election_id %}
+
+    {% if positions %}
+        <table>
+
+            <tr>
+                <th>Position</th>
+                <th>Max Votes</th>
+                <th>Actions</th>
+            </tr>
+
+            {% for p in positions %}
+            <tr>
+
+                <td>{{ p.position_name }}</td>
+                <td>{{ p.max_votes }}</td>
+                <td>
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="position_id" value="{{ p.id }}">
+                        <input type="hidden" name="election_id" value="{{ election_id }}">
+
+                        <button type="submit" class="btn danger small" onclick="return confirm('Delete this position?');">
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+
+        </table>
+    {% else %}
+
+        <p>No positions added for this election yet.</p>
+
+    {% endif %}
+
+{% else %}
+    <p>Select an election above to view its positions.</p>
+    
+{% endif %}
+
+</div>
+{% endblock %}

@@ -28,6 +28,10 @@ body {
     color: #16221e;
 }
 
+.login-card {
+    color: var(--bhs-glacier-green);
+}
+
 .site-header {
     display: flex;
     justify-content: space-between;
@@ -201,6 +205,95 @@ body {
     border: 1px solid #b7e2e9;
 }
 
+.error-page {
+    text-align: center;
+    color: white;
+    padding: 80px 20px;
+}
+
+.error-page h1 {
+    font-size: 72px;
+    margin: 0;
+}
+
+.site-footer {
+    text-align: center;
+    color: #6f7f79;
+    font-size: 13px;
+    padding: 20px;
+}
+
+.candidate-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.candidate-card {
+    border: 1.5px solid #e7ede9;
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+}
+
+.candidate-photo {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 8px;
+}
+
+.candidate-photo-large {
+    width: 100%;
+    max-width: 260px;
+    border-radius: var(--radius);
+    display: block;
+    margin: 0 auto 12px;
+}
+
+.candidate-bio {
+    font-size: 13px;
+    color: #4d5a56;
+    min-height: 40px;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,30,25,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-box {
+    background: white;
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 480px;
+    width: 92%;
+    position: relative;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    border: none;
+    background: none;
+    font-size: 22px;
+    cursor: pointer;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -234,23 +327,6 @@ label {
     color: var(--bhs-bush-green);
 }
 
-.error-page {
-    text-align: center;
-    color: white;
-    padding: 80px 20px;
-}
-
-.error-page h1 {
-    font-size: 72px;
-    margin: 0;
-}
-
-.site-footer {
-    text-align: center;
-    color: #6f7f79;
-    font-size: 13px;
-    padding: 20px;
-}
 
 @media (max-width: 640px) {
     .site-header {

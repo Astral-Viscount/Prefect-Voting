@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Voter Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Welcome, {{ user.name }} <span class="badge voter">Voter</span></h2>
+
+    {% if not election %}
+        <p>There's no active election yet. Check back soon.</p>
+
+    {% elif not voting_open %}
+        <p class="flash flash-info">{{ voting_message }}</p>
+
+    {% else %}
+        <p>{{ election.title }} — voting is open.</p>
+
+    {% endif %}
+</div>
+
+{% for entry in positions %}
+<div class="card">
+    <h3>{{ entry.position.position_name }}</h3>
+
+    {% if entry.has_voted %}
+        <p class="flash flash-success">You've already voted for this position. Thank you.</p>
+
+    {% elif not voting_open %}
+        <p>Voting isn't open for this position right now.</p>
+
+    {% else %}
+
+        <div class="candidate-grid">
+
+        {% for c in entry.candidates %}
+
+            <div class="candidate-card">
+                {% if c.media.photo %}
+                <img src="{{ c.media.photo }}" alt="{{ c.name }}" class="candidate-photo">
+                {% endif %}
+
+                <h4>{{ c.name }}</h4>
+                <p class="candidate-bio">{{ c.bio[:140] }}{% if c.bio and c.bio|length > 140 %}…{% endif %}</p>
+                
+                <button type="button" class="btn outline small"
+                        onclick="showCandidateDetail({{ c.id }}, {{ entry.position.id }})">
+                    Learn more
+                </button>
+
+                <button type="button" class="btn glacier small"
+                        onclick="voteFor({{ entry.position.id }}, {{ c.id }}, '{{ c.name }}')">
+                    Vote
+                </button>
+
+            </div>
+        {% endfor %}
+
+        </div>
+    {% endif %}
+
+</div>
+{% endfor %}
+
+<div id="candidateModal" class="modal hidden">
+
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeCandidateModal()">&times;</button>
+        <div id="candidateModalContent"></div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+    window.POSITIONS_DATA = {{ positions | tojson }};
+</script>
+
+<script src="{{ url_for('static', filename='js/voter_dashboard.js') }}"></script>
+
+{% endblock %}

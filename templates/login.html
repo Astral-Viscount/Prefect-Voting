@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "layout.html" %}
 
 {% block title %}
 Login 
@@ -16,11 +16,11 @@ Login
          data-callback="handleCredentialResponse">
     </div>
     <div class="g_id_signin"></div>
-    
-    <a href="/" class="back">← Back</a>
+    <br>
+    <a href="/" class="btn glacier">Back</a>
 </div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="{{ url_for('static', filename='login.js') }}"></script>
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
 
 {% endblock %}
