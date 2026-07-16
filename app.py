@@ -414,7 +414,30 @@ def candidate_profile():
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
-    return "Admin dashboard"
+    election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+
+    stats = {
+        "positions": 0, 
+        "candidates": 0, 
+        "votes": 0
+    }
+
+    if election:
+        stats["positions"] = query_db("SELECT COUNT(*) AS c FROM Positions WHERE election_id=?", (election["id"],), one=True)["c"]
+        
+        stats["candidates"] = query_db("""
+            SELECT COUNT(*) AS c FROM Candidates
+            JOIN Positions ON Candidates.position_id = Positions.id
+            WHERE Positions.election_id=?
+        """, (election["id"],), one=True)["c"]
+        
+        stats["votes"] = query_db("""
+            SELECT COUNT(*) AS c FROM Votes
+            JOIN Positions ON Votes.position_id = Positions.id
+            WHERE Positions.election_id=?
+        """, (election["id"],), one=True)["c"]
+
+    return render_template("admin_dashboard.html", election=election, stats=stats)
 
 @app.errorhandler(404)
 def not_found(e):
@@ -574,6 +597,7 @@ def admin_candidates():
                     "SELECT id FROM Candidates WHERE user_id=? AND position_id=?",
                     (student["id"], request.form.get("position_id")), one=True
                 )
+
                 if existing:
                     flash("That student is already a candidate for this position.", "error")
                 else:
