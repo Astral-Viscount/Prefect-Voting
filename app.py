@@ -555,5 +555,61 @@ def admin_positions():
 
     return render_template("admin_positions.html", elections=elections, positions=positions, election_id=election_id)
 
+@app.route("/admin/candidates", methods=["GET", "POST"])
+@admin_required
+def admin_candidates():
+    election_id = request.values.get("election_id", type=int)
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        
+        if action == "assign":
+            email = request.form.get("student_email", "").strip().lower()
+            student = query_db("SELECT * FROM Users WHERE email=?", (email,), one=True)
+
+            if not student:
+                flash("That email hasn't logged into the site yet. Ask them to sign in once first.", "error")
+            else:
+                existing = query_db(
+                    "SELECT id FROM Candidates WHERE user_id=? AND position_id=?",
+                    (student["id"], request.form.get("position_id")), one=True
+                )
+                if existing:
+                    flash("That student is already a candidate for this position.", "error")
+                else:
+                    execute_db(
+                        "INSERT INTO Candidates (position_id, user_id, bio, photo) VALUES (?, ?, '', '{}')",
+                        (request.form.get("position_id"), student["id"])
+                    )
+                    
+                    flash(f"{student['name']} added as a candidate.", "success")
+
+        elif action == "remove":
+            execute_db("DELETE FROM Candidates WHERE id=?", (request.form.get("candidate_id"),))
+
+            flash("Candidate removed.", "info")
+
+        return redirect(f"/admin/candidates?election_id={election_id}")
+
+    elections = query_db("SELECT * FROM Election ORDER BY id DESC")
+
+    if election_id:
+        positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election_id,))
+    else:
+        positions = []
+
+    candidates = []
+
+    if election_id:
+        candidates = query_db("""
+            SELECT Candidates.id, Candidates.bio, Positions.position_name, Users.name, Users.email
+            FROM Candidates
+            JOIN Positions ON Candidates.position_id = Positions.id
+            JOIN Users ON Candidates.user_id = Users.id
+            WHERE Positions.election_id = ?
+        """, (election_id,))
+
+    return render_template("admin_candidates.html", elections=elections, positions=positions, candidates=candidates, election_id=election_id)
+
 if __name__ == "__main__":
     app.run(debug=True)
