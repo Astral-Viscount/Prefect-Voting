@@ -179,7 +179,7 @@ def admin_required(view):
 def home():
     return render_template(
         "index.html",
-        user=session.get("user_email")
+        user=session.get("user_name")
     )
 
 @app.route("/login")
