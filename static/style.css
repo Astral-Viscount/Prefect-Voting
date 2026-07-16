@@ -15,6 +15,10 @@
     box-sizing: border-box;
 }
 
+textarea {
+    resize: none;
+}
+
 body {
     font-family: var(--font-brand);
     margin: 0;
