@@ -11,7 +11,7 @@ from pathlib import Path
 from datetime import datetime
 from werkzeug.utils import secure_filename
 
-# replaces any old env varible with the new one
+# replaces any old env variable with the new one
 load_dotenv(override=True)
 
 app = Flask(__name__)
@@ -304,8 +304,7 @@ def voter_dashboard():
             "has_voted": already_voted is not None,
         })
 
-    return render_template(
-        "voter_dashboard.html", user=user, election=election, positions=positions, voting_open=is_open, voting_message=message)
+    return render_template("voter_dashboard.html", user=user, election=election, positions=positions, voting_open=is_open, voting_message=message)
 
 @app.route("/vote/<int:position_id>/<int:candidate_id>", methods=["POST"])
 @login_required
@@ -467,6 +466,60 @@ def voting_is_open(election):
         return False, "Voting has stopped for this election"
     
     return True, None
+
+@app.route("/admin/elections", methods=["GET", "POST"])
+@admin_required
+def admin_elections():
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "create":
+            execute_db("""
+                INSERT INTO Election (title, description, start_date, end_date, is_active)
+                VALUES (?, ?, ?, ?, 0)
+            """, (
+                request.form.get("title", "").strip(),
+                request.form.get("description", "").strip(),
+                request.form.get("start_date") or None,
+                request.form.get("end_date") or None,
+            ))
+            
+            flash("Election created.", "success")
+
+        elif action == "toggle_active":
+            election_id = request.form.get("election_id")
+
+            execute_db("UPDATE Election SET is_active = 0")
+            execute_db("UPDATE Election SET is_active = 1 WHERE id = ?", (election_id,))
+
+            flash("Election activated. All other elections were deactivated.", "success")
+
+        elif action == "deactivate":
+            election_id = request.form.get("election_id")
+
+            execute_db("UPDATE Election SET is_active = 0 WHERE id = ?", (election_id,))
+
+            flash("Election closed.", "info")
+
+        elif action == "update_dates":
+            execute_db("""
+                UPDATE Election SET title=?, description=?, start_date=?, end_date=?
+                WHERE id=?
+            """, (
+                request.form.get("title", "").strip(),
+                request.form.get("description", "").strip(),
+                request.form.get("start_date") or None,
+                request.form.get("end_date") or None,
+                request.form.get("election_id"),
+            ))
+
+            flash("Election updated.", "success")
+
+        return redirect("/admin/elections")
+
+    elections = query_db("SELECT * FROM Election ORDER BY id DESC")
+
+    return render_template("admin_elections.html", elections=elections)
 
 if __name__ == "__main__":
     app.run(debug=True)
