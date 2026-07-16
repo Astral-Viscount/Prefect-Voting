@@ -22,7 +22,11 @@ Admin Dashboard
             {% endif %}
         </p>
 
-        <p>{{ election.start_date or "No start date set" }} to; {{ election.end_date or "No end date set" }}</p>
+        <p>
+            {{ election.start_date|datetime }}
+            to
+            {{ election.end_date|datetime }}
+        </p>
 
     {% else %}
         <p>No election has been created yet. <a href="/admin/elections">Create one to get started</a></p>

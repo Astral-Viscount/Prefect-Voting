@@ -430,7 +430,7 @@ def admin_dashboard():
             JOIN Positions ON Candidates.position_id = Positions.id
             WHERE Positions.election_id=?
         """, (election["id"],), one=True)["c"]
-        
+
         stats["votes"] = query_db("""
             SELECT COUNT(*) AS c FROM Votes
             JOIN Positions ON Votes.position_id = Positions.id
@@ -473,6 +473,18 @@ def parse_date(value):
         return datetime.fromisoformat(value)
     except ValueError:
         return datetime.fromisoformat(value + ":00")
+
+def format_datetime(value):
+    date_time = parse_date(value)
+
+    if not date_time:
+        return "Not set"
+
+    return date_time.strftime("%d %b %Y, %I:%M %p")
+
+@app.template_filter("datetime")
+def datetime_filter(value):
+    return format_datetime(value)
 
 def voting_is_open(election):
     if not election or not election["is_active"]:

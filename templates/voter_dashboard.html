@@ -43,7 +43,11 @@ Voter Dashboard
                 {% endif %}
 
                 <h4>{{ c.name }}</h4>
-                <p class="candidate-bio">{{ c.bio[:140] }}{% if c.bio and c.bio|length > 140 %}…{% endif %}</p>
+                <p class="candidate-bio">{{ c.bio[:140] }}
+                    {% if c.bio and c.bio|length > 140 %}
+                    …
+                    {% endif %}
+                </p>
                 
                 <button type="button" class="btn outline small"
                         onclick="showCandidateDetail({{ c.id }}, {{ entry.position.id }})">
