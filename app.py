@@ -483,7 +483,7 @@ def admin_elections():
                 request.form.get("start_date") or None,
                 request.form.get("end_date") or None,
             ))
-            
+
             flash("Election created.", "success")
 
         elif action == "toggle_active":
@@ -520,6 +520,40 @@ def admin_elections():
     elections = query_db("SELECT * FROM Election ORDER BY id DESC")
 
     return render_template("admin_elections.html", elections=elections)
+
+@app.route("/admin/positions", methods=["GET", "POST"])
+@admin_required
+def admin_positions():
+    election_id = request.values.get("election_id", type=int)
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "create":
+
+            execute_db(
+                "INSERT INTO Positions (election_id, position_name, max_votes) VALUES (?, ?, ?)",
+                (request.form.get("election_id"), request.form.get("position_name", "").strip(),
+                 request.form.get("max_votes", 1))
+            )
+
+            flash("Position added.", "success")
+
+        elif action == "delete":
+            execute_db("DELETE FROM Positions WHERE id=?", (request.form.get("position_id"),))
+
+            flash("Position removed.", "info")
+
+        return redirect(f"/admin/positions?election_id={election_id}")
+
+    elections = query_db("SELECT * FROM Election ORDER BY id DESC")
+
+    if election_id:
+        positions = query_db("SELECT * FROM Positions WHERE election_id=?",(election_id,))
+    else:
+        positions = []
+
+    return render_template("admin_positions.html", elections=elections, positions=positions, election_id=election_id)
 
 if __name__ == "__main__":
     app.run(debug=True)
