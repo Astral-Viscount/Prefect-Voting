@@ -737,5 +737,40 @@ def admin_voters():
 
         return render_template("admin_voters.html", election=election, voters=voters)
 
+@app.route("/admin/manage-admins", methods=["GET", "POST"])
+@admin_required
+def manage_admins():
+    current_user = get_current_user()
+
+    if request.method == "POST":
+        target_id = request.form.get("user_id")
+        action = request.form.get("action")
+
+        if str(current_user["id"]) == str(target_id):
+            flash("You can't change your own admin rights.", "error")
+        
+        elif action == "promote":
+            execute_db("UPDATE Users SET is_admin=1 WHERE id=?", (target_id))
+            flash("User has been promoted to admin.", "success")
+        
+        elif action == "demote":
+            execute_db("UPDATE Users SET is_admin=0 WHERE id=?", (target_id))
+            flash("User has been demoted from admin.", "info")
+
+        return redirect("admin/manage-admins")
+
+    search = request.args.get("q", "").strip()
+
+    if search:
+        users = query_db(
+            "SELECT * FROM Users WHERE email LIKE ? OR name LIKE ? ORDER BY name",
+            (f"%{search}%", f"%{search}%")
+        )
+        
+    else:
+        users = query_db("SELECT * FROM Users ORDER BY is_admin DESC, name")
+
+    return render_template("admin_manage_admins.html", users=users, search=search)
+
 if __name__ == "__main__":
     app.run(debug=True)
