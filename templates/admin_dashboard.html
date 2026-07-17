@@ -1,0 +1,88 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Admin Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Election Control Centre</h2>
+
+    {% if election %}
+        <p>
+            <strong>{{ election.title }}</strong>
+
+            {% if election.is_active %}
+            <span class="badge candidate">Live</span>
+
+            {% else %}
+            <span class="badge voter">Inactive</span>
+
+            {% endif %}
+        </p>
+
+        <p>
+            {{ election.start_date|datetime }}
+            to
+            {{ election.end_date|datetime }}
+        </p>
+
+    {% else %}
+        <p>No election has been created yet. <a href="/admin/elections">Create one to get started</a></p>
+
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Currently</h3>
+
+    <div class="stats-grid">
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.positions }}</span>
+            <span class="stat-label">Positions</span>
+        </div>
+
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.candidates }}</span>
+            <span class="stat-label">Candidates</span>
+        </div>
+
+        <div class="stat-box">
+            <span class="stat-number">{{ stats.votes }}</span>
+            <span class="stat-label">Votes cast</span>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card">
+    <h3>Admin Tools</h3>
+
+    <div class="admin-tool-grid">
+        <a href="/admin/elections" class="admin-tool-card">
+            <h4>Elections</h4>
+            <p>Create elections, set voting windows, activate or close voting</p>
+        </a>
+
+        <a href="/admin/positions" class="admin-tool-card">
+            <h4>Positions</h4>
+            <p>Add or remove the roles being voted on (Head Prefect, etc.)</p>
+        </a>
+
+        <a href="/admin/candidates" class="admin-tool-card">
+            <h4>Candidates</h4>
+            <p>Assign students as candidates for each position</p>
+        </a>
+
+        <a href="/admin/results" class="admin-tool-card">
+            <h4>Live Results</h4>
+            <p>Live-updating charts and turnout for the current election</p>
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

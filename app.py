@@ -57,7 +57,7 @@ UPLOAD_FOLDER = os.path.join("static", "uploads", "candidates")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp"}
 ALLOWED_AUDIO_EXT = {"webm", "mp3", "wav", "ogg"}
-app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024 # 8 MB
+app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024 # 32 MB
 
 
 def get_db():
@@ -179,7 +179,7 @@ def admin_required(view):
 def home():
     return render_template(
         "index.html",
-        user=session.get("user_email")
+        user=session.get("user_name")
     )
 
 @app.route("/login")
@@ -282,7 +282,7 @@ def voter_dashboard():
                 WHERE Candidates.position_id = ?
             """, (pos["id"],))
 
-        candidates_list = []
+            candidates_list = []
 
         for c in candidates:
             media = json.loads(c["photo"]) if c["photo"] else {}
@@ -299,8 +299,8 @@ def voter_dashboard():
         )
 
         positions.append({
-            "position": pos,
-            "candidates": candidate_list,
+            "position": dict(pos),
+            "candidates": candidates_list,
             "has_voted": already_voted is not None,
         })
 
@@ -414,7 +414,30 @@ def candidate_profile():
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
-    return "Admin dashboard"
+    election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+
+    stats = {
+        "positions": 0, 
+        "candidates": 0, 
+        "votes": 0
+    }
+
+    if election:
+        stats["positions"] = query_db("SELECT COUNT(*) AS c FROM Positions WHERE election_id=?", (election["id"],), one=True)["c"]
+        
+        stats["candidates"] = query_db("""
+            SELECT COUNT(*) AS c FROM Candidates
+            JOIN Positions ON Candidates.position_id = Positions.id
+            WHERE Positions.election_id=?
+        """, (election["id"],), one=True)["c"]
+
+        stats["votes"] = query_db("""
+            SELECT COUNT(*) AS c FROM Votes
+            JOIN Positions ON Votes.position_id = Positions.id
+            WHERE Positions.election_id=?
+        """, (election["id"],), one=True)["c"]
+
+    return render_template("admin_dashboard.html", election=election, stats=stats)
 
 @app.errorhandler(404)
 def not_found(e):
@@ -450,6 +473,18 @@ def parse_date(value):
         return datetime.fromisoformat(value)
     except ValueError:
         return datetime.fromisoformat(value + ":00")
+
+def format_datetime(value):
+    date_time = parse_date(value)
+
+    if not date_time:
+        return "Not set"
+
+    return date_time.strftime("%d %b %Y, %I:%M %p")
+
+@app.template_filter("datetime")
+def datetime_filter(value):
+    return format_datetime(value)
 
 def voting_is_open(election):
     if not election or not election["is_active"]:
@@ -574,6 +609,7 @@ def admin_candidates():
                     "SELECT id FROM Candidates WHERE user_id=? AND position_id=?",
                     (student["id"], request.form.get("position_id")), one=True
                 )
+
                 if existing:
                     flash("That student is already a candidate for this position.", "error")
                 else:
@@ -610,6 +646,66 @@ def admin_candidates():
         """, (election_id,))
 
     return render_template("admin_candidates.html", elections=elections, positions=positions, candidates=candidates, election_id=election_id)
+
+@app.route("/admin/api/results/<int:position_id>")
+@admin_required
+def api_results(position_id):
+    position = query_db(
+        "SELECT * FROM Positions WHERE id=?",
+        (position_id,),
+        one=True
+    )
+
+    if not position:
+        return jsonify({"error": "not found"}), 404
+
+    rows = query_db("""
+        SELECT Users.name AS name, COUNT(Votes.id) AS votes
+        FROM Candidates
+        JOIN Users ON Candidates.user_id = Users.id
+        LEFT JOIN Votes ON Votes.candidate_id = Candidates.id
+        WHERE Candidates.position_id = ?
+        GROUP BY Candidates.id
+        ORDER BY votes DESC, Users.name ASC
+    """, (position_id,))
+
+    candidates = [{"name": r["name"], "votes": int(r["votes"])} for r in rows]
+
+    return jsonify({
+        "position_name": position["position_name"],
+        "candidates": candidates,
+        "total_votes": sum(c["votes"] for c in candidates)
+    })
+
+@app.route("/admin/api/turnout")
+@admin_required
+def api_turnout():
+    election = get_active_election()
+
+    if not election:
+        return jsonify({"voted": 0, "eligible": 0})
+
+    eligible = query_db("SELECT COUNT(*) AS c FROM Users WHERE is_admin = 0", one=True)["c"]
+
+    voted = query_db("""
+        SELECT COUNT(DISTINCT Votes.voter_id) AS c
+        FROM Votes JOIN Positions ON Votes.position_id = Positions.id
+        WHERE Positions.election_id = ?
+    """, (election["id"],), one=True)["c"]
+
+    return jsonify({"voted": voted, "eligible": eligible})
+
+@app.route("/admin/results")
+@admin_required
+def admin_results():
+    election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+
+    if election:
+        positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election["id"],))
+    else:
+        position = []
+        
+    return render_template("admin_results.html", election=election, positions=positions)
 
 if __name__ == "__main__":
     app.run(debug=True)
