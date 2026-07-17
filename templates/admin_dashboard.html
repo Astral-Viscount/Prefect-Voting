@@ -13,12 +13,10 @@ Admin Dashboard
         <p>
             <strong>{{ election.title }}</strong>
 
-            {% if election.is_active %}
-            <span class="badge candidate">Live</span>
-
+            {% if election.is_active and election.end_date|datetime %}
+                <span class="badge candidate">Live</span>
             {% else %}
-            <span class="badge voter">Inactive</span>
-
+                <span class="badge voter">Inactive</span>
             {% endif %}
         </p>
 
@@ -68,7 +66,7 @@ Admin Dashboard
 
         <a href="/admin/positions" class="admin-tool-card">
             <h4>Positions</h4>
-            <p>Add or remove the roles being voted on (Head Prefect, etc.)</p>
+            <p>Add or remove the roles being voted on</p>
         </a>
 
         <a href="/admin/candidates" class="admin-tool-card">
@@ -79,6 +77,16 @@ Admin Dashboard
         <a href="/admin/results" class="admin-tool-card">
             <h4>Live Results</h4>
             <p>Live-updating charts and turnout for the current election</p>
+        </a>
+
+        <a href="/admin/voters" class="admin-tool-card">
+            <h4>Voters (Students who has voted)</h4>
+            <p>See who has participated in the election</p>
+        </a>
+
+        <a href="/admin/manage-admins" class="admin-tool-card">
+            <h4>Manage Admins</h4>
+            <p>Promote or demote other admins</p>
         </a>
 
     </div>

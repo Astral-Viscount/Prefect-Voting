@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Manage Admins
+{% endblock %}
+
+{% block content %}
+
+<p class="admin-breadcrumb"><a href="/admin">Back to Admin Dashboard</a></p>
+
+<div class="card">
+
+    <h2>Manage Admins</h2>
+
+    <form method="GET" style="margin-bottom:16px;">
+        <input type="text" name="q" placeholder="Search by name or email" value="{{ search }}">
+    </form>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Action</th>
+        </tr>
+
+        {% for u in users %}
+        <tr>
+            <td>{{ u.name }}</td>
+            <td>{{ u.email }}</td>
+            <td>
+                {% if u.is_admin %}
+                <span class="badge admin">Admin</span>
+                {% else %}
+                <span class="badge voter">Voter</span>
+                {% endif %}
+            </td>
+
+            <td>
+                <form method="POST" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="user_id" value="{{ u.id }}">
+
+                    {% if u.is_admin %}
+                        <input type="hidden" name="action" value="demote">
+                        <button type="submit" class="btn danger small">Demote</button>
+
+                    {% else %}
+                        <input type="hidden" name="action" value="promote">
+                        <button type="submit" class="btn glacier small">Promote</button>
+
+                    {% endif %}
+                </form>
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+    </table>
+
+</div>
+
+{% endblock %}
