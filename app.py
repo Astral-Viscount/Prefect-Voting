@@ -719,7 +719,7 @@ def admin_results():
 @app.route("/admin/voters")
 @admin_required
 def admin_voters():
-    election = get_active_election or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+    election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
 
     voters = []
 

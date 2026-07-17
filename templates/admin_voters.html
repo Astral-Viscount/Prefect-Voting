@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Voters (Students who has voted)
+{% endblock %}
+
+{% block content %}
+
+<p class="admin-breadcrumb"><a href="/admin">Back to Admin Dashboard</a></p>
+
+<div class="card">
+    <h2>Voters in {{ election.title if election else "No election"}}</h2>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Position voted for</th>
+            <th>First Vote</th>
+
+            {% for voter in voters %}
+            <tr>
+                <td>{{ voter.name }}</td>
+                <td>{{ voter.email }}</td>
+                <td>{{ voter.position_voted}}</td>
+                <td>{{ voter.first_vote_time|datetime }}</td>
+            </tr>
+            
+            {% endfor %}
+
+            {% if not voters %}
+            <p>Nobody has voted yet.</p>
+            {% endif %}
+
+        </tr>
+
+    </table>
+
+</div>
+
+{% endblock %}
