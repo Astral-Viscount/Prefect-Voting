@@ -282,7 +282,7 @@ def voter_dashboard():
                 WHERE Candidates.position_id = ?
             """, (pos["id"],))
 
-        candidates_list = []
+            candidates_list = []
 
         for c in candidates:
             media = json.loads(c["photo"]) if c["photo"] else {}
@@ -299,8 +299,8 @@ def voter_dashboard():
         )
 
         positions.append({
-            "position": pos,
-            "candidates": candidate_list,
+            "position": dict(pos),
+            "candidates": candidates_list,
             "has_voted": already_voted is not None,
         })
 
