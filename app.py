@@ -695,5 +695,17 @@ def api_turnout():
 
     return jsonify({"voted": voted, "eligible": eligible})
 
+@app.route("/admin/results")
+@admin_required
+def admin_results():
+    election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+
+    if election:
+        positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election["id"],))
+    else:
+        position = []
+        
+    return render_template("admin_results.html", election=election, positions=positions)
+
 if __name__ == "__main__":
     app.run(debug=True)
