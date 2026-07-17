@@ -647,5 +647,53 @@ def admin_candidates():
 
     return render_template("admin_candidates.html", elections=elections, positions=positions, candidates=candidates, election_id=election_id)
 
+@app.route("/admin/api/results/<int:position_id>")
+@admin_required
+def api_results(position_id):
+    position = query_db(
+        "SELECT * FROM Positions WHERE id=?",
+        (position_id,),
+        one=True
+    )
+
+    if not position:
+        return jsonify({"error": "not found"}), 404
+
+    rows = query_db("""
+        SELECT Users.name AS name, COUNT(Votes.id) AS votes
+        FROM Candidates
+        JOIN Users ON Candidates.user_id = Users.id
+        LEFT JOIN Votes ON Votes.candidate_id = Candidates.id
+        WHERE Candidates.position_id = ?
+        GROUP BY Candidates.id
+        ORDER BY votes DESC, Users.name ASC
+    """, (position_id,))
+
+    candidates = [{"name": r["name"], "votes": int(r["votes"])} for r in rows]
+
+    return jsonify({
+        "position_name": position["position_name"],
+        "candidates": candidates,
+        "total_votes": sum(c["votes"] for c in candidates)
+    })
+
+@app.route("/admin/api/turnout")
+@admin_required
+def api_turnout():
+    election = get_active_election()
+
+    if not election:
+        return jsonify({"voted": 0, "eligible": 0})
+
+    eligible = query_db("SELECT COUNT(*) AS c FROM Users WHERE is_admin = 0", one=True)["c"]
+
+    voted = query_db("""
+        SELECT COUNT(DISTINCT Votes.voter_id) AS c
+        FROM Votes JOIN Positions ON Votes.position_id = Positions.id
+        WHERE Positions.election_id = ?
+    """, (election["id"],), one=True)["c"]
+
+    return jsonify({"voted": voted, "eligible": eligible})
+
 if __name__ == "__main__":
     app.run(debug=True)
