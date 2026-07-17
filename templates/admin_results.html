@@ -21,7 +21,7 @@ Live Results
 {% for pos in positions %}
 <div class="card">
 
-    <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="card-header">
         <h3>{{ pos.position_name }}</h3>
 
         <select onchange="setChartType({{ pos.id }}, this.value)">
@@ -31,7 +31,10 @@ Live Results
 
     </div>
 
-    <canvas id="chart-{{ pos.id }}" width="480" height="280"></canvas>
+    <div class="chart-wrapper">
+        <canvas id="chart-{{ pos.id }}"></canvas>
+    </div>
+
     <p id="total-{{ pos.id }}"></p>
 
 </div>
