@@ -89,11 +89,14 @@ def execute_db(query, args=()):
 
 def verify_google_token(token):
 
-    idinfo = id_token.verify_oauth2_token(
+    try:
+        idinfo = id_token.verify_oauth2_token(
         token,
         requests.Request(),
         GOOGLE_CLIENT_ID
-    )
+        )
+    except Exception:
+        return None
 
     email = idinfo["email"].lower()
 
@@ -111,11 +114,17 @@ def verify_google_token(token):
     }
 
 # Wrapper functions
+
+# Flask's 'g' object to cache the user for the rest of the session
 def get_current_user():
     if "user_id" not in session:
         return None
 
-    return query_db("SELECT * FROM Users Where id=?", (session["user_id"],), one=True)
+    if not hasattr(g, "current_user"):
+        g.current_user = query_db("SELECT * FROM Users Where id=?", (session["user_id"],), one=True)
+
+    return g.current_user
+
 
 def is_candidate(user_id):
     row = query_db("SELECT id FROM Candidates WHERE user_id=?", (user_id,), one=True)
@@ -211,21 +220,15 @@ def login_data():
         else:
             is_admin_val = 0
 
-        execute_db("""
-            INSERT INTO Users (google_id, email, name, is_admin)
-            VALUES (?, ?, ?, ?)
-        """, (
-            user_data["google_id"],
-            user_data["email"],
-            user_data["name"],
-            is_admin_val
-        ))
+        try:
+            execute_db("""INSERT INTO Users (google_id, email, name, is_admin) VALUES (?, ?, ?, ?)""", 
+                    (user_data["google_id"], user_data["email"], user_data["name"], is_admin_val))
 
-        user = query_db(
-            "SELECT * FROM Users WHERE google_id=?",
-            (user_data["google_id"],),
-            one=True
-        )
+        except sqlite3.IntegrityError:
+            pass 
+
+        user = query_db("SELECT * FROM Users WHERE google_id=?", (user_data["google_id"],), one=True)
+
     else:
         if user_data["should_be_admin"] and not user["is_admin"]:
             execute_db("UPDATE Users SET is_admin=1 WHERE id=?", (user["id"],))
@@ -284,25 +287,25 @@ def voter_dashboard():
 
             candidates_list = []
 
-        for c in candidates:
-            media = json.loads(c["photo"]) if c["photo"] else {}
-            candidates_list.append({
-                    "id": c["candidate_id"],
-                    "name": c["candidate_name"],
-                    "bio": c["bio"],
-                    "media": media,
-            })
-        
-        already_voted = query_db(
-            "SELECT id FROM Votes WHERE voter_id=? AND position_id=?",
-            (user["id"], pos["id"]), one=True
-        )
+            for c in candidates:
+                media = json.loads(c["photo"]) if c["photo"] else {}
+                candidates_list.append({
+                        "id": c["candidate_id"],
+                        "name": c["candidate_name"],
+                        "bio": c["bio"],
+                        "media": media,
+                })
+            
+            already_voted = query_db(
+                "SELECT id FROM Votes WHERE voter_id=? AND position_id=?",
+                (user["id"], pos["id"]), one=True
+            )
 
-        positions.append({
-            "position": dict(pos),
-            "candidates": candidates_list,
-            "has_voted": already_voted is not None,
-        })
+            positions.append({
+                "position": dict(pos),
+                "candidates": candidates_list,
+                "has_voted": already_voted is not None,
+            })
 
     return render_template("voter_dashboard.html", user=user, election=election, positions=positions, voting_open=is_open, voting_message=message)
 
@@ -381,11 +384,17 @@ def candidate_profile():
         photo_file = request.files.get("photo_file")
 
         if photo_file and photo_file.filename:
-            ext = photo_file.filename.rsplit(".", 1)[-1].lower()
+            ext = Path(photo_file.filename).suffix.lower().lstrip('.')
 
             if ext in ALLOWED_IMAGE_EXT:
                 filename = secure_filename(f"candidate_{candidate_row['id']}_photo.{ext}")
-                photo_file.save(os.path.join(UPLOAD_FOLDER, filename))
+                full_path = Path(UPLOAD_FOLDER).resolve() / filename
+
+                if not str(full_path).startswith(str(Path(UPLOAD_FOLDER).resolve())):
+                    abort(400)
+                    
+                photo_file.save(full_path)
+
                 media["photo"] = f"/static/uploads/candidates/{filename}"
             else:
                 flash("Photo must be PNG, JPG or WEBP.", "error")
@@ -703,7 +712,7 @@ def admin_results():
     if election:
         positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election["id"],))
     else:
-        position = []
+        positions = []
         
     return render_template("admin_results.html", election=election, positions=positions)
 
