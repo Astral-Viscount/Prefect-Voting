@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Candidate Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Welcome, {{ user.name }} <span class="badge candidate">Candidate</span></h2>
+
+    {% if candidate %}
+        <p>You're standing for <strong>{{ candidate.position_name }}</strong>.</p>
+    {% else %}
+        <p>You don't appear to be registered as a candidate for the current election. Contact an administrator if this seems wrong.</p>
+    {% endif %}
+
+</div>
+
+{% if candidate %}
+<div class="card">
+    <h3>My Profile</h3>
+
+    <div class="candidate-preview">
+        {% if media.photo %}
+        <img src="{{ media.photo }}" alt="{{ user.name }}" class="candidate-photo">
+        {% endif %}
+
+        <p class="candidate-bio">{{ candidate.bio or "You haven't written a bio yet. Add one so voters can learn about you." }}</p>
+
+        {% if media.voice %}
+        <audio controls src="{{ media.voice }}"></audio>
+        {% endif %}
+
+        {% if media.video_url %}
+        <p><a href="{{ media.video_url }}" target="_blank" rel="noopener">Watch my introduction video</a></p>
+        {% endif %}
+
+    </div>
+    <a href="/candidate/profile" class="btn glacier">Edit My Profile</a>
+
+</div>
+
+<div class="card">
+    <h3>My Results</h3>
+
+    {% if vote_count is not none %}
+        <p>Final result: <strong>{{ vote_count }}</strong> vote{{ "s" if vote_count != 1 else "" }}.</p>
+    {% else %}
+        <p>Results aren't available yet. They're only shown to candidates once the election has closed, so they can't influence campaigning while voting is still live.</p>
+    {% endif %}
+    
+</div>
+{% endif %}
+
+{% endblock %}
