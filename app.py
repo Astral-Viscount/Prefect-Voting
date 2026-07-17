@@ -716,5 +716,26 @@ def admin_results():
         
     return render_template("admin_results.html", election=election, positions=positions)
 
+@app.route("/admin/voters")
+@admin_required
+def admin_voters():
+    election = get_active_election or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+
+    voters = []
+
+    if election:
+        voters = query_db("""
+            SELECT Users.id, Users.name, Users.email, MIN(Votes.time) AS first_vote_time,
+                   COUNT(Votes.id) AS positions_voted
+            FROM Votes
+            JOIN Positions ON Votes.position_id = Positions.id
+            JOIN Users ON Votes.voter_id = Users.id
+            WHERE Positions.election_id = ?
+            GROUP BY Users.id
+            ORDER BY Users.name
+        """, (election["id"],))
+
+        return render_template("admin_voters.html", election=election, voters=voters)
+
 if __name__ == "__main__":
     app.run(debug=True)
