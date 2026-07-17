@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Live Results
+{% endblock %}
+
+{% block content %}
+
+<p class="admin-breadcrumb"><a href="/admin">Back to Admin Dashboard</a></p>
+
+<div class="card">
+    <h2>Turnout</h2>
+    
+    <div class="turnout-track">
+        <div id="turnout-bar" class="turnout-fill"></div>
+    </div>
+
+    <p id="turnout-label">Loading…</p>
+</div>
+
+{% for pos in positions %}
+<div class="card">
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>{{ pos.position_name }}</h3>
+
+        <select onchange="setChartType({{ pos.id }}, this.value)">
+            <option value="bar">Bar chart</option>
+            <option value="pie">Pie chart</option>
+        </select>
+
+    </div>
+
+    <canvas id="chart-{{ pos.id }}" width="480" height="280"></canvas>
+    <p id="total-{{ pos.id }}"></p>
+
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+    window.POSITION_IDS = {{ positions | map(attribute='id') | list | tojson }};
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_results.js') }}"></script>
+
+{% endblock %}
