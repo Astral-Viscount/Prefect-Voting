@@ -57,7 +57,7 @@ UPLOAD_FOLDER = os.path.join("static", "uploads", "candidates")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp"}
 ALLOWED_AUDIO_EXT = {"webm", "mp3", "wav", "ogg"}
-app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024 # 8 MB
+app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024 # 32 MB
 
 
 def get_db():
