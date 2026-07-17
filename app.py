@@ -181,6 +181,53 @@ def admin_required(view):
 
     return wrapped
 
+def parse_date(value):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return datetime.fromisoformat(value + ":00")
+
+def format_datetime(value):
+    date_time = parse_date(value)
+
+    if not date_time:
+        return "Not set"
+
+    return date_time.strftime("%d %b %Y, %I:%M %p")
+
+@app.template_filter("datetime")
+def datetime_filter(value):
+    return format_datetime(value)
+
+def update_expired_elections():
+    now = datetime.now()
+
+    elections = query_db("SELECT id, end_date FROM Election WHERE is_active=1")
+
+    for election in elections:
+        end = parse_date(election["end_date"])
+
+        if end and now > end:
+            execute_db("UPDATE Election SET is_active=0 WHERE id=?", (election["id"],))
+
+@app.before_request
+def csrf_protect():
+    if request.method == "POST":
+        if request.path == "/login":
+            return
+
+        token = session.get("csrf_token")
+        sent_token = request.form.get("csrf_token") or request.headers.get("X-CSRFToken")
+        
+        if not token or not sent_token or not secrets_lib.compare_digest(token, sent_token):
+            abort(403)
+
+@app.before_request
+def check_expired_elections():
+    update_expired_elections()
+
 @app.route("/")
 def home():
     return render_template(
@@ -344,19 +391,24 @@ def cast_vote(position_id, candidate_id):
 @candidate_required
 def candidate_dashboard():
     user = get_current_user()
-    election = get_active_election()
 
     candidate_row = query_db("""
         SELECT Candidates.*, Positions.position_name, Positions.election_id
-        FROM Candidates JOIN Positions ON Candidates.position_id = Positions.id
+        FROM Candidates
+        JOIN Positions ON Candidates.position_id = Positions.id
         WHERE Candidates.user_id = ?
     """, (user["id"],), one=True)
 
+    candidate_election = None
+
+    if candidate_row:
+        candidate_election = query_db("SELECT * FROM Election WHERE id=?", (candidate_row["election_id"],), one=True)
+
     vote_count = None
 
-    if candidate_row and election and candidate_row["election_id"] == election["id"] and not election["is_active"]:
+    if candidate_row and candidate_election and not candidate_election["is_active"]:
+        row = query_db("SELECT COUNT(*) AS c FROM Votes WHERE candidate_id=?", (candidate_row["id"],), one=True)
 
-        row = query_db("SELECT COUNT(*) as c FROM Votes WHERE candidate_id=?", (candidate_row["id"],), one=True)
         vote_count = row["c"]
 
     media = json.loads(candidate_row["photo"]) if candidate_row and candidate_row["photo"] else {}
@@ -456,44 +508,12 @@ def not_found(e):
 def forbidden(e):
     return render_template("403.html"), 403
 
-@app.before_request
-def csrf_protect():
-    if request.method == "POST":
-        if request.path == "/login":
-            return
-
-        token = session.get("csrf_token")
-        sent_token = request.form.get("csrf_token") or request.headers.get("X-CSRFToken")
-        
-        if not token or not sent_token or not secrets_lib.compare_digest(token, sent_token):
-            abort(403)
-
 @app.context_processor
 def inject_csrf_token():
     if "csrf_token" not in session:
         session["csrf_token"] = secrets_lib.token_hex(32)
         
     return dict(csrf_token=session["csrf_token"])
-
-def parse_date(value):
-    if not value:
-        return None
-    try:
-        return datetime.fromisoformat(value)
-    except ValueError:
-        return datetime.fromisoformat(value + ":00")
-
-def format_datetime(value):
-    date_time = parse_date(value)
-
-    if not date_time:
-        return "Not set"
-
-    return date_time.strftime("%d %b %Y, %I:%M %p")
-
-@app.template_filter("datetime")
-def datetime_filter(value):
-    return format_datetime(value)
 
 def voting_is_open(election):
     if not election or not election["is_active"]:
@@ -725,7 +745,8 @@ def admin_voters():
 
     if election:
         voters = query_db("""
-            SELECT Users.id, Users.name, Users.email, MIN(Votes.time) AS first_vote_time,
+            SELECT Users.id, Users.name, Users.email,
+                   MIN(Votes.time) AS first_vote_time,
                    COUNT(Votes.id) AS positions_voted
             FROM Votes
             JOIN Positions ON Votes.position_id = Positions.id
@@ -735,7 +756,7 @@ def admin_voters():
             ORDER BY Users.name
         """, (election["id"],))
 
-        return render_template("admin_voters.html", election=election, voters=voters)
+    return render_template("admin_voters.html", election=election, voters=voters)
 
 @app.route("/admin/manage-admins", methods=["GET", "POST"])
 @admin_required
@@ -750,14 +771,14 @@ def manage_admins():
             flash("You can't change your own admin rights.", "error")
         
         elif action == "promote":
-            execute_db("UPDATE Users SET is_admin=1 WHERE id=?", (target_id))
+            execute_db("UPDATE Users SET is_admin=1 WHERE id=?", (target_id,))
             flash("User has been promoted to admin.", "success")
         
         elif action == "demote":
-            execute_db("UPDATE Users SET is_admin=0 WHERE id=?", (target_id))
+            execute_db("UPDATE Users SET is_admin=0 WHERE id=?", (target_id,))
             flash("User has been demoted from admin.", "info")
 
-        return redirect("admin/manage-admins")
+        return redirect("/admin/manage-admins")
 
     search = request.args.get("q", "").strip()
 

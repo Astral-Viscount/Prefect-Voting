@@ -13,12 +13,10 @@ Admin Dashboard
         <p>
             <strong>{{ election.title }}</strong>
 
-            {% if election.is_active %}
-            <span class="badge candidate">Live</span>
-
+            {% if election.is_active and election.end_date|datetime %}
+                <span class="badge candidate">Live</span>
             {% else %}
-            <span class="badge voter">Inactive</span>
-
+                <span class="badge voter">Inactive</span>
             {% endif %}
         </p>
 
