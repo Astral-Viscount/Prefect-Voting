@@ -5,120 +5,103 @@ Manage Candidates
 {% endblock %}
 
 {% block content %}
+<p class="admin-breadcrumb"><a href="/admin">Back to Admin Dashboard</a></p>
 
 <div class="card">
     <h2>Manage Candidates</h2>
 
-<form method="GET" style="margin-bottom: 18px;">
-    <label>Select Election</label>
-
-    <select name="election_id" onchange="this.form.submit()" required>
-        <option value="">Choose an election</option>
-
+    <label for="election-select">Election</label>
+    <select id="election-select" onchange="window.location.href='/admin/candidates?election_id=' + this.value">
+        <option value="">Select an election</option>
         {% for e in elections %}
-            <option value="{{ e.id }}"
-                {% if election_id == e.id %}
-                selected
-                {% endif %}
-            >
-                {{ e.title }}
-            </option>
+        <option value="{{ e.id }}" 
+            {% if election_id == e.id %}
+            selected
+            {% endif %}>{{ e.title }}
+        </option>
         {% endfor %}
 
     </select>
-</form>
+
+</div>
 
 {% if election_id %}
-    <h3>Assign Candidate</h3>
+<div class="card">
+    <h3>Assign a Candidate</h3>
 
-    {% if positions %}
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input type="hidden" name="action" value="assign">
-            <input type="hidden" name="election_id" value="{{ election_id }}">
-
-            <label>Student Email</label>
-            <input type="email" name="student_email" required>
-
-            <label>Position</label>
-            <select name="position_id" required>
-                <option value="">Choose a position</option>
-
-                {% for p in positions %}
-                    <option value="{{ p.id }}">{{ p.position_name }}</option>
-                {% endfor %}
-
-            </select>
-
-            <button type="submit" class="btn glacier" style="margin-top:14px;">Add Candidate</button>
-
-        </form>
+    {% if not positions %}
+        <p>This election has no positions yet. <a href="/admin/positions?election_id={{ election_id }}">Add one first</a></p>
 
     {% else %}
-        <p>Please create positions for this election before assigning candidates.</p>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" value="assign">
+        <input type="hidden" name="election_id" value="{{ election_id }}">
+        <label>Student's school email (they must have logged in at least once)</label>
+        <input type="email" name="student_email" required>
+        <label>Position</label>
 
+        <select name="position_id" required>
+            <option value="">Choose a position</option>
+
+            {% for p in positions %}
+            <option value="{{ p.id }}">{{ p.position_name }}</option>
+            {% endfor %}
+
+        </select>
+        <button type="submit" class="btn glacier" style="margin-top:14px;">Assign Candidate</button>
+
+    </form>
     {% endif %}
-
-{% else %}
-    <p>Please choose an election first to add and manage candidates.</p>
-{% endif %}
 
 </div>
 
 <div class="card">
-    <h2>
-        Candidates 
-        {% if election_id %}
-        for Selected Election
-        {% endif %}
-    </h2>
+    <h3>Current Candidates</h3>
 
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Position</th>
+            <th>Actions</th>
+        </tr>
 
-{% if election_id %}
+        {% for c in candidates %}
+        <tr>
+            <td>{{ c.name }}</td>
+            <td>{{ c.email }}</td>
+            <td>{{ c.position_name }}</td>
 
-    {% if candidates %}
-        <table>
-            <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Position</th>
-                <th>Bio</th>
-                <th>Actions</th>
-            </tr>
+            <td>
+                <form method="POST" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="candidate_id" value="{{ c.id }}">
+                    <input type="hidden" name="election_id" value="{{ election_id }}">
 
-            {% for c in candidates %}
-            <tr>
-                <td>{{ c.name }}</td>
-                <td>{{ c.email }}</td>
-                <td>{{ c.position_name }}</td>
-                <td>{{ c.bio or "—" }}</td>
-                <td>
-                    <form method="POST" style="display:inline;">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <input type="hidden" name="action" value="remove">
-                        <input type="hidden" name="candidate_id" value="{{ c.id }}">
-                        <input type="hidden" name="election_id" value="{{ election_id }}">
+                    <button type="submit" class="btn danger small" onclick="return confirm('Remove this candidate?');">Remove</button>
+                </form>
+            </td>
 
-                        <button type="submit" class="btn danger small" onclick="return confirm('Remove this candidate?');">
-                            Remove
-                        </button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
+        </tr>
+        {% endfor %}
 
-        </table>
+    </table>
 
-    {% else %}
-        <p>No candidates added for this election yet.</p>
-
+    {% if not candidates %}
+    <p>No candidates assigned yet.</p>
     {% endif %}
 
-{% else %}
-    <p>Select an election above to view its candidates.</p>
-
-{% endif %}
+    <a href="/admin/positions?election_id={{ election_id }}" class="btn outline small">Back to Positions</a>
 
 </div>
+
+{% else %}
+<div class="card">
+    <p>Select an election above to manage its candidates.</p>
+</div>
+
+{% endif %}
 
 {% endblock %}

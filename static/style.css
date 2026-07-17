@@ -357,6 +357,22 @@ body {
     color: #4d5a56;
 }
 
+.admin-breadcrumb {
+    margin-bottom: 4px;
+}
+
+.admin-breadcrumb a {
+    color: var(--bhs-pounamu);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.admin-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+
 table {
     width: 100%;
     border-collapse: collapse;
