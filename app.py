@@ -67,13 +67,11 @@ def get_db():
         db.row_factory = sqlite3.Row
     return db
 
-
 @app.teardown_appcontext
 def close_connection(exception):
     db = getattr(g, "_database", None)
     if db is not None:
         db.close()
-
 
 def query_db(query, args=(), one=False):
     cur = get_db().execute(query, args)
@@ -124,7 +122,6 @@ def get_current_user():
         g.current_user = query_db("SELECT * FROM Users Where id=?", (session["user_id"],), one=True)
 
     return g.current_user
-
 
 def is_candidate(user_id):
     row = query_db("SELECT id FROM Candidates WHERE user_id=?", (user_id,), one=True)
@@ -372,7 +369,10 @@ def candidate_profile():
     user = get_current_user()
     candidate_row = query_db("SELECT * FROM Candidates WHERE user_id=?", (user["id"],), one=True)
 
-    media = json.loads(candidate_row["photo"]) if candidate_row["photo"] else {}
+    if candidate_row["photo"]:
+        media = json.loads(candidate_row["photo"])
+    else:
+        media = {}
 
     if request.method == "POST":
         bio = request.form.get("bio", "").strip()[:2000]
@@ -392,7 +392,7 @@ def candidate_profile():
 
                 if not str(full_path).startswith(str(Path(UPLOAD_FOLDER).resolve())):
                     abort(400)
-                    
+
                 photo_file.save(full_path)
 
                 media["photo"] = f"/static/uploads/candidates/{filename}"

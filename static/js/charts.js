@@ -52,6 +52,7 @@ function createChart(positionId, type, data) {
 
         options: {
             responsive: true,
+            maintainAspectRatio: false,
 
             plugins: {
                 legend: {
@@ -91,6 +92,7 @@ function renderChart(positionId) {
             document.getElementById(
                 `total-${positionId}`
             ).textContent =
+            
                 `Total votes: ${data.total_votes}`;
         })
 
