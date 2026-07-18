@@ -31,6 +31,10 @@ body {
     color: #16221e;
 }
 
+html, body {
+    overflow-x: hidden;
+}
+
 .login-card {
     color: var(--bhs-glacier-green);
 }
@@ -452,6 +456,7 @@ body {
     align-items: center;
     gap: 20px;
     margin-bottom: 18px;
+    flex-wrap: wrap;
 }
 
 .card-header select {
@@ -711,6 +716,12 @@ body {
     text-align: center;
 }
 
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 #level-select.information {
     color: var(--bhs-glacier-green);
 }
@@ -745,6 +756,7 @@ th, td {
     text-align: left;
     border-bottom: 1px solid #e7ede9;
     font-size: 14px;
+    overflow-wrap: anywhere;
 }
 
 th {

@@ -16,6 +16,7 @@ My Results
 
         <p style="color:#4d5a56; font-size:13px;">Closed {{ election.end_date|datetime }}</p>
 
+        <div class="table-responsive">
         <table>
             <tr>
                 <th>Position</th>
@@ -30,6 +31,7 @@ My Results
 
             {% endfor %}
         </table>
+        </div>
 
         <a href="/voter/results/{{ election.id }}" class="btn glacier small" style="margin-top:12px;">View Full Results</a>
 
