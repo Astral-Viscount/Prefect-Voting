@@ -862,5 +862,13 @@ def admin_audit_log():
     
     return render_template("admin_audit_log.html", logs=logs)
 
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
 if __name__ == "__main__":
     app.run(debug=True)
