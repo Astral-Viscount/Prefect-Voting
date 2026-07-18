@@ -42,6 +42,16 @@ body {
     align-items: center;
     padding: 24px 40px;
     color: var(--bhs-white);
+    flex-wrap: wrap;
+}
+
+.nav-toggle {
+    background: none;
+    border: none;
+    color: var(--bhs-white);
+    font-size: 26px;
+    cursor: pointer;
+    padding: 4px 8px;
 }
 
 .brand {
@@ -64,9 +74,16 @@ body {
 }
 
 .site-nav {
-    display: flex;
-    align-items: center;
+    display: none;
+    align-items: flex-start;
     gap: 18px;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 18px; ;
+}
+
+.site-nav.open {
+    display: flex;
 }
 
 .site-nav a {
@@ -229,7 +246,7 @@ body {
 
 .candidate-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: 1fr;
     gap: 16px;
     margin-top: 16px;
 }
@@ -498,22 +515,12 @@ label {
     color: var(--bhs-bush-green);
 }
 
-
-@media (max-width: 640px) {
-    .site-header {
-        flex-direction: column;
-        gap: 12px;
-        padding: 20px;
-    }
-
-    .site-nav {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-}
-
 @media (min-width: 640px) {
     .admin-tool-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .candidate-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
@@ -521,5 +528,22 @@ label {
 @media (min-width: 1024px) {
     .admin-tool-grid {
         grid-template-columns: repeat(3, 1fr);
+    }
+
+    .candidate-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+
+    .site-nav {
+        display: flex !important;
+        flex-direction: row;
+        width: auto;
+        margin-top: 0;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .nav-toggle {
+        display: none;
     }
 }
