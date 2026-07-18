@@ -32,13 +32,15 @@
         <nav class="site-nav" id="siteNav">
             <a href="/dashboard">Dashboard</a>
 
-            {% if session.get('is_admin') %}
-                <a href="/admin/elections">Elections</a>
-                <a href="/admin/results">Results</a>
-                <a href="/admin/voters">Voters</a>
-                <a href="/admin/announcements">Announcements</a>
-                <a href="/admin/audit-log">Audit Log</a>
-                <a href="/admin/manage-admins">Manage Admins</a>
+            {% if not session.get('is_admin') %}
+
+                {% if session.get('is_candidate') %}
+                    <a href="/candidate/results">My Results</a>
+
+                {% else %}
+                    <a href="/voter/results">My Results</a>
+                    
+                {% endif %}
             {% endif %}
 
             <div class="nav-account">

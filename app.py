@@ -314,6 +314,7 @@ def login_data():
     session["user_id"] = user["id"]
     session["user_name"] = user["name"]
     session["is_admin"] = bool(user["is_admin"])
+    session["is_candidate"] = is_candidate(user["id"])
 
     return jsonify({"success": True})
 
