@@ -509,6 +509,7 @@ body {
 
 .footer-col {
     min-width: 0;
+    text-align: center;
 }
 
 .footer-col h4 {
@@ -567,6 +568,7 @@ body {
     display: flex;
     gap: 14px;
     margin-top: 6px;
+    justify-content: center;
 }
 
 .footer-bottom {
@@ -829,6 +831,10 @@ label {
 
     .footer-bottom {
         text-align: left;
+    }
+
+    .footer-social {
+        justify-content: flex-start;
     }
 }
 
