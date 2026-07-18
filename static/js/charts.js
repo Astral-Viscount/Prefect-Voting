@@ -8,17 +8,18 @@ const PALETTE = [
 ];
 
 const chartState = {};
+let modalChart = null;
 
 function getColor(i) {
     if (i < PALETTE.length) {
         return PALETTE[i];
     }
-    const hue = (i * 137.508) % 360; // golden angle to make the new colors look unique
+    const hue = (i * 137.508) % 360;
     return `hsl(${hue}, 55%, 42%)`;
 }
 
-async function fetchResults(positionId) {
-    const res = await fetch(`/admin/api/results/${positionId}`);
+async function fetchResults(positionId, apiBase = "/admin/api/results") {
+    const res = await fetch(`${apiBase}/${positionId}`);
 
     if (!res.ok) {
         throw new Error("Failed to load results");
@@ -27,31 +28,16 @@ async function fetchResults(positionId) {
     return res.json();
 }
 
-
-function createChart(positionId, type, data) {
-    const canvas = document.getElementById(`chart-${positionId}`);
-
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-
-    if (chartState[positionId]?.chart) {
-        chartState[positionId].chart.destroy();
-    }
-
-    chartState[positionId].chart = new Chart(ctx, {
+function buildChartConfig(type, data) {
+    return {
         type: type,
-
         data: {
             labels: data.candidates.map(c => c.name),
 
             datasets: [{
                 label: "Votes",
-
                 data: data.candidates.map(c => c.votes),
-
                 backgroundColor: data.candidates.map((_, i) => getColor(i)),
-
                 borderWidth: 1
             }]
         },
@@ -61,66 +47,83 @@ function createChart(positionId, type, data) {
             maintainAspectRatio: false,
 
             plugins: {
-                legend: {
-                    display: type === "pie"
-                },
-                tooltip: {
-                    enabled: true
-                }
+                legend: { display: type === "pie" },
+                tooltip: { enabled: true }
             },
 
             scales: type === "bar" ? {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                }
-
+                y: { beginAtZero: true, ticks: { precision: 0 } }
             } : {}
-
         }
-    });
+    };
+}
+
+function createChart(positionId, type, data) {
+    const canvas = document.getElementById(`chart-${positionId}`);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    if (chartState[positionId]?.chart) {
+        chartState[positionId].chart.destroy();
+    }
+
+    chartState[positionId].chart = new Chart(ctx, buildChartConfig(type, data));
 }
 
 function renderChart(positionId) {
+    const state = chartState[positionId];
 
-    fetchResults(positionId)
+    fetchResults(positionId, state.apiBase)
         .then(data => {
-            const type = chartState[positionId].type;
+            state.lastData = data;
 
-            createChart(
-                positionId,
-                type,
-                data
-            );
-            
-            document.getElementById(
-                `total-${positionId}`
-            ).textContent =
-            
-                `Total votes: ${data.total_votes}`;
+            createChart(positionId, state.type, data);
+
+            const totalEl = document.getElementById(`total-${positionId}`);
+            if (totalEl) {
+                totalEl.textContent = `Total votes: ${data.total_votes}`;
+            }
+
+            if (modalChart && state.modalOpen) {
+                modalChart.destroy();
+                modalChart = new Chart(
+                    document.getElementById("modalChartCanvas").getContext("2d"),
+                    buildChartConfig(state.type, data)
+                );
+
+                const modalTotal = document.getElementById("modalChartTotal");
+                if (modalTotal) {
+                    modalTotal.textContent = `Total votes: ${data.total_votes}`;
+                }
+            }
         })
-
-        .catch(err =>
-            console.error(err)
-        );
+        .catch(err => console.error(err));
 }
 
-function initLiveChart(positionId, defaultType="bar") {
+function initLiveChart(positionId, defaultType = "bar", options = {}) {
+    const { apiBase = "/admin/api/results", live = true, pollMs = 5000 } = options;
 
     chartState[positionId] = {
         type: defaultType,
-        chart: null
+        chart: null,
+        apiBase: apiBase,
+        lastData: null,
+        modalOpen: false
     };
 
     renderChart(positionId);
 
-    chartState[positionId].timer =
-        setInterval(
-            () => renderChart(positionId),
-            5000
-        );
+    if (live) {
+        chartState[positionId].timer = setInterval(() => renderChart(positionId), pollMs);
+    }
+
+    const wrapper = document.querySelector(`.chart-wrapper[data-position-id="${positionId}"]`);
+
+    if (wrapper) {
+        wrapper.classList.add("clickable");
+        wrapper.addEventListener("click", () => openChartModal(positionId));
+    }
 }
 
 function setChartType(positionId, type) {
@@ -128,31 +131,58 @@ function setChartType(positionId, type) {
     renderChart(positionId);
 }
 
+function openChartModal(positionId) {
+    const state = chartState[positionId];
+    const modal = document.getElementById("chartModal");
+
+    if (!state || !state.lastData || !modal) return;
+
+    Object.values(chartState).forEach(s => s.modalOpen = false);
+    state.modalOpen = true;
+
+    modal.classList.remove("hidden");
+
+    if (modalChart) {
+        modalChart.destroy();
+    }
+
+    modalChart = new Chart(
+        document.getElementById("modalChartCanvas").getContext("2d"),
+        buildChartConfig(state.type, state.lastData)
+    );
+
+    const modalTotal = document.getElementById("modalChartTotal");
+    if (modalTotal) {
+        modalTotal.textContent = `Total votes: ${state.lastData.total_votes}`;
+    }
+}
+
+function closeChartModal() {
+    const modal = document.getElementById("chartModal");
+    if (modal) modal.classList.add("hidden");
+
+    Object.values(chartState).forEach(s => s.modalOpen = false);
+
+    if (modalChart) {
+        modalChart.destroy();
+        modalChart = null;
+    }
+}
+
 function renderTurnout() {
     fetch("/admin/api/turnout")
     .then(r => r.json())
+    
     .then(data => {
+        const pct = data.eligible ? Math.round((data.voted / data.eligible) * 100) : 0;
 
-        const pct =
-            data.eligible
-            ? Math.round(
-                (data.voted / data.eligible) * 100
-              )
-            : 0;
+        const bar = document.getElementById("turnout-bar");
+        const label = document.getElementById("turnout-label");
 
-        const bar =
-            document.getElementById("turnout-bar");
+        if (bar) bar.style.width = `${pct}%`;
 
-        const label =
-            document.getElementById("turnout-label");
-
-        if (bar)
-            bar.style.width = `${pct}%`;
-
-        if(label)
-            label.textContent =
-            `${data.voted} / ${data.eligible} logged-in accounts have voted (${pct}%)`;
+        if (label) label.textContent = `${data.voted} / ${data.eligible} logged-in accounts have voted (${pct}%)`;
     });
 
-    setTimeout(renderTurnout,5000);
+    setTimeout(renderTurnout, 5000);
 }
