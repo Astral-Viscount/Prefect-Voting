@@ -6,7 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='assets/favicon-512.png') }}">
+    <link rel="icon" href="{{ url_for('static', filename='assets/favicon-192.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='assets/favicon-192.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='assets/favicon-512.png') }}">
+    <meta property="og:title" content="Burnside Prefect Voting">
+    <meta property="og:description" content="Prefect voting system for Burnside High School.">
+    <meta property="og:image" content="{{ url_for('static', filename='assets/og_image.png', _external=True) }}">
     <title>
         {% block title %}
         Burnside Prefect Voting
