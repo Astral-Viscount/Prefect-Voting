@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+{% block title %}
+{{ election.title }} — Results
+{% endblock %}
+
+{% block content %}
+
+<p class="admin-breadcrumb"><a href="/candidate/results">Back to My Results</a></p>
+
+<div class="card">
+    <h2>{{ election.title }} — Final Results</h2>
+</div>
+
+{% for position in positions %}
+<div class="card">
+    <div class="card-header">
+        <h3>{{ position.position_name }}</h3>
+        <select onchange="setChartType({{ position.id }}, this.value)">
+            <option value="bar">Bar chart</option>
+            <option value="pie">Pie chart</option>
+        </select>
+    </div>
+
+    <div class="chart-wrapper" data-position-id="{{ position.id }}">
+        <canvas id="chart-{{ position.id }}"></canvas>
+    </div>
+
+    <p class="chart-hint">Click the chart to enlarge</p>
+    <p id="total-{{ position.id }}"></p>
+</div>
+{% endfor %}
+
+<div id="chartModal" class="modal hidden">
+    <div class="modal-box chart-modal-box">
+        <button class="modal-close" onclick="closeChartModal()">&times;</button>
+        <div class="chart-wrapper large">
+            <canvas id="modalChartCanvas"></canvas>
+        </div>
+
+        <p id="modalChartTotal"></p>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+    window.POSITION_IDS = {{ positions | map(attribute='id') | list | tojson }};
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/candidate_results.js') }}"></script>
+
+{% endblock %}
