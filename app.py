@@ -515,6 +515,12 @@ def inject_csrf_token():
         
     return dict(csrf_token=session["csrf_token"])
 
+@app.context_processor
+def inject_announcements():
+    active = query_db("SELECT * FROM Announcements WHERE is_active=1 ORDER BY id DESC")
+    
+    return dict(site_announcements=active)
+
 def voting_is_open(election):
     if not election or not election["is_active"]:
         return False, "No current election running"
@@ -820,7 +826,7 @@ def admin_announcements():
         return redirect("/admin/announcements")
 
     announcements = query_db("SELECT * FROM Announcements ORDER BY id DESC LIMIT 50")
-    
+
     return render_template("admin_announcements.html", announcements=announcements)
 
 if __name__ == "__main__":

@@ -462,6 +462,40 @@ body {
     margin: 0;
 }
 
+.announcement-stack {
+    max-width: 900px;
+    margin: 0 auto 12px;
+    padding: 0 20px;
+}
+
+.announcement {
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.announcement-info {
+    background: var(--bhs-sky-blue);
+    color: #04303a;
+}
+
+.announcement-success {
+    background: var(--bhs-glacier-green);
+    color: white;
+}
+
+.announcement-warning {
+    background: var(--bhs-gold-accent);
+    color: #3a2f00;
+}
+
+.announcement-danger {
+    background: #c0392b;
+    color: white;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
