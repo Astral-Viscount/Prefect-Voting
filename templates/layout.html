@@ -48,9 +48,9 @@
 
     {% if site_announcements %}
         <div class="announcement-stack">
-            
+
         {% for site_announcement in site_announcements %}
-            <div class="announcement announcement-{{ a.level }}">{{ site_announcement.message }}</div>
+            <div class="announcement announcement-{{ site_announcement.level }}">{{ site_announcement.message }}</div>
         {% endfor %}
 
         </div>
