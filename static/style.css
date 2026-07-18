@@ -586,6 +586,19 @@ body {
     font-style: italic;
 }
 
+.legal-page h3 { 
+    color: var(--bhs-pounamu); 
+    margin-top: 22px; 
+}
+
+.legal-page ul { 
+    padding-left: 20px; 
+}
+
+.legal-page li { 
+    margin-bottom: 6px; 
+}
+
 #level-select.information {
     color: var(--bhs-glacier-green);
 }
