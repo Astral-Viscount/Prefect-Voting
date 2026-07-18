@@ -45,7 +45,7 @@ Manage Elections
 
         <tr>
             <td>{{ election.title }}</td>
-            <td>{{ election.start_date or "—" }} to {{ election.end_date or "—" }}</td>
+            <td>{{ election.start_date|datetime }} to {{ election.end_date|datetime }}</td>
 
             <td>
                 {% if election.is_active %}
@@ -64,7 +64,7 @@ Manage Elections
 
                     {% if election.is_active %}
                         <input type="hidden" name="action" value="deactivate">
-                        <button type="submit" class="btn danger small">Close</button>
+                        <button type="submit" class="btn danger small">Deactivate</button>
 
                     {% else %}
                         <input type="hidden" name="action" value="toggle_active">
