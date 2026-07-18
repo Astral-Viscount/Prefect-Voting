@@ -892,7 +892,22 @@ def voter_results_list():
         ORDER BY Election.id DESC
     """, (user["id"],))
 
-    return render_template("voter_results_list.html", elections=elections)
+    my_votes = {}
+
+    for election in elections:
+        rows = query_db("""
+            SELECT Positions.position_name AS position_name, Users.name AS candidate_name
+            FROM Votes
+            JOIN Positions ON Votes.position_id = Positions.id
+            JOIN Candidates ON Votes.candidate_id = Candidates.id
+            JOIN Users ON Candidates.user_id = Users.id
+            WHERE Votes.voter_id = ? AND Positions.election_id = ?
+            ORDER BY Positions.position_name
+        """, (user["id"], election["id"]))
+
+        my_votes[election["id"]] = rows
+
+    return render_template("voter_results_list.html", elections=elections, my_votes=my_votes)
 
 @app.route("/voter/results/<int:election_id>")
 @login_required

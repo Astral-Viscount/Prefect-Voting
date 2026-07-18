@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+
 {% block title %}
 My Results
 {% endblock %}
@@ -9,22 +10,31 @@ My Results
     <h2>Election Results</h2>
     <p>Results appear here once voting has closed for an election you took part in.</p>
 
-    <table>
-        <tr>
-            <th>Election</th>
-            <th>Closed</th>
-            <th></th>
-        </tr>
+    {% for election in elections %}
+    <div class="card" style="margin:20px 0 0; box-shadow:none; border:1.5px solid #e7ede9;">
+        <h3>{{ election.title }}</h3>
 
-        {% for election in elections %}
-        <tr>
-            <td>{{ election.title }}</td>
-            <td>{{ election.end_date|datetime }}</td>
-            <td><a href="/voter/results/{{ election.id }}" class="btn glacier small">View Results</a></td>
-        </tr>
-        {% endfor %}
+        <p style="color:#4d5a56; font-size:13px;">Closed {{ election.end_date|datetime }}</p>
 
-    </table>
+        <table>
+            <tr>
+                <th>Position</th>
+                <th>You voted for</th>
+            </tr>
+
+            {% for vote in my_votes[election.id] %}
+            <tr>
+                <td>{{ vote.position_name }}</td>
+                <td>{{ vote.candidate_name }}</td>
+            </tr>
+
+            {% endfor %}
+        </table>
+
+        <a href="/voter/results/{{ election.id }}" class="btn glacier small" style="margin-top:12px;">View Full Results</a>
+
+    </div>
+    {% endfor %}
 
     {% if not elections %}
     <p>Nothing to show yet — this only lists elections you voted in that have since closed.</p>
