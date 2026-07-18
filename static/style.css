@@ -658,6 +658,26 @@ body {
     justify-content: flex-end;
 }
 
+.chart-wrapper.clickable {
+    cursor: pointer;
+}
+
+.chart-hint {
+    font-size: 12px;
+    color: #4d5a56;
+    text-align: center;
+    margin: 4px 0 0;
+}
+
+.modal-box.chart-modal-box {
+    max-width: 720px;
+    width: 95%;
+}
+
+.chart-wrapper.large {
+    height: 420px;
+}
+
 #level-select.information {
     color: var(--bhs-glacier-green);
 }
