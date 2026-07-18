@@ -5,12 +5,6 @@ document.getElementById('navToggle')?.addEventListener('click', function () {
     this.setAttribute('aria-expanded', isOpen);
 });
 
-document.getElementById('navToggle')?.addEventListener('click', function () {
-    const nav = document.getElementById('siteNav');
-    const isOpen = nav.classList.toggle('open');
-    this.setAttribute('aria-expanded', isOpen);
-});
-
 function ensureToastContainer() {
     let container = document.getElementById('toastContainer');
 
