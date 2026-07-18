@@ -231,6 +231,17 @@ def csrf_protect():
 def check_expired_elections():
     update_expired_elections()
 
+def user_voted_in_election(user_id, election_id):
+    row = query_db("""
+        SELECT Votes.id
+        FROM Votes
+        JOIN Positions ON Votes.position_id = Positions.id
+        WHERE Votes.voter_id = ? AND Positions.election_id = ?
+        LIMIT 1
+    """, (user_id, election_id), one=True)
+
+    return row is not None
+
 def log_admin_action(action, details="", admin_id="__unset__"):
     if admin_id == "__unset__":
         admin = get_current_user()
@@ -471,7 +482,7 @@ def candidate_profile():
             if ext in ALLOWED_AUDIO_EXT:
                 filename = secure_filename(f"candidate_{candidate_row['id']}_voice.{ext}")
                 voice_file.save(os.path.join(UPLOAD_FOLDER, filename))
-                
+
                 media["voice"] = f"/static/uploads/candidates/{filename}"
             else:
                 flash("Voice clip must be webm, mp3, wav or ogg.", "error")
@@ -775,6 +786,74 @@ def admin_results():
         positions = []
         
     return render_template("admin_results.html", election=election, positions=positions)
+
+@app.route("/voter/results")
+@login_required
+def voter_results_list():
+    user = get_current_user()
+
+    elections = query_db("""
+        SELECT DISTINCT Election.*
+        FROM Votes
+        JOIN Positions ON Votes.position_id = Positions.id
+        JOIN Election ON Positions.election_id = Election.id
+        WHERE Votes.voter_id = ? AND Election.is_active = 0
+        ORDER BY Election.id DESC
+    """, (user["id"],))
+
+    return render_template("voter_results_list.html", elections=elections)
+
+@app.route("/voter/results/<int:election_id>")
+@login_required
+def voter_results(election_id):
+    user = get_current_user()
+    election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+
+    if not election or election["is_active"]:
+        abort(403)
+
+    if not user_voted_in_election(user["id"], election_id):
+        abort(403)
+
+    positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election_id,))
+
+    return render_template("voter_results.html", election=election, positions=positions)
+
+@app.route("/voter/api/results/<int:position_id>")
+@login_required
+def voter_api_results(position_id):
+    user = get_current_user()
+    position = query_db("SELECT * FROM Positions WHERE id=?", (position_id,), one=True)
+
+    if not position:
+        return jsonify({"error": "not found"}), 404
+
+    election = query_db("SELECT * FROM Election WHERE id=?", (position["election_id"],), one=True)
+
+    if not election or election["is_active"]:
+        return jsonify({"error": "Results aren't available until this election has closed."}), 403
+
+    if not user_voted_in_election(user["id"], election["id"]):
+        return jsonify({"error": "forbidden"}), 403
+
+    rows = query_db("""
+        SELECT Users.name AS name, COUNT(Votes.id) AS votes
+        FROM Candidates
+        JOIN Users ON Candidates.user_id = Users.id
+        LEFT JOIN Votes ON Votes.candidate_id = Candidates.id
+        WHERE Candidates.position_id = ?
+        GROUP BY Candidates.id
+        ORDER BY votes DESC, Users.name ASC
+    """, (position_id,))
+
+    candidates = [{"name": r["name"], "votes": int(r["votes"])} for r in rows]
+    total_votes = sum(c["votes"] for c in candidates)
+
+    return jsonify({
+        "position_name": position["position_name"],
+        "candidates": candidates,
+        "total_votes": total_votes
+    })
 
 @app.route("/admin/voters")
 @admin_required
