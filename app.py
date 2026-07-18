@@ -793,5 +793,35 @@ def manage_admins():
 
     return render_template("admin_manage_admins.html", users=users, search=search)
 
+@app.route("/admin/announcements", methods=["GET", "POST"])
+@admin_required
+def admin_announcements():
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "create":
+            message = request.form.get("message", "").strip()[:300]
+            level = request.form.get("level", "info")
+
+            if message:
+                execute_db(
+                    "INSERT INTO Announcements (message, level, created_by) VALUES (?, ?, ?)", (message, level, session["user_id"]))
+                
+                log_admin_action("create_announcement", message)
+                flash("Announcement posted.", "success")
+
+        elif action == "deactivate":
+            ann_id = request.form.get("announcement_id")
+            execute_db("UPDATE Announcements SET is_active=0 WHERE id=?", (ann_id,))
+
+            log_admin_action("deactivate_announcement", f"id={ann_id}")
+            flash("Announcement removed.", "info")
+
+        return redirect("/admin/announcements")
+
+    announcements = query_db("SELECT * FROM Announcements ORDER BY id DESC LIMIT 50")
+    
+    return render_template("admin_announcements.html", announcements=announcements)
+
 if __name__ == "__main__":
     app.run(debug=True)
