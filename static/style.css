@@ -491,6 +491,101 @@ body {
     color: white;
 }
 
+.site-footer {
+    background: var(--bhs-bush-green);
+    color: #d7e6e1;
+    margin-top: 60px;
+    padding: 40px 20px 20px;
+}
+
+.footer-grid {
+    display:grid;
+    grid-template-columns:1fr;
+    gap:28px;
+    max-width:1080px;
+    margin:0 auto;
+    padding:0 20px;
+}
+
+.footer-col {
+    min-width: 0;
+}
+
+.footer-col h4 {
+    color: white;
+    margin: 0 0 10px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.footer-col a {
+    display: block;
+    color: #cfe4de;
+    text-decoration: none;
+    margin-bottom: 6px;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.footer-bottom p {
+    max-width:800px;
+    overflow-wrap: anywhere;
+}
+
+.footer-col a:hover {
+    color: var(--bhs-glacier-green);
+}
+
+.footer-brand .footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.footer-brand .footer-logo span {
+    color: white;
+    font-weight: 700;
+}
+
+.footer-brand p {
+    font-size: 13px;
+    color: #b9d2ca;
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.footer-logo img {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.footer-social {
+    display: flex;
+    gap: 14px;
+    margin-top: 6px;
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.12);
+    margin-top: 28px;
+    padding-top: 16px;
+    max-width: 1080px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 12px;
+    color: #9fb8b0;
+    text-align: center;
+}
+
+.footer-disclaimer {
+    margin-top: 4px;
+    font-style: italic;
+}
+
 #level-select.information {
     color: var(--bhs-glacier-green);
 }
@@ -598,6 +693,18 @@ label {
     color: var(--bhs-bush-green);
 }
 
+@media (max-width: 400px) {
+
+    .footer-logo {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .footer-social {
+        flex-wrap: wrap;
+    }
+}
+
 @media (min-width: 640px) {
     .admin-tool-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -605,6 +712,17 @@ label {
 
     .candidate-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 768px) {
+    .footer-grid {
+        grid-template-columns: 2fr 1fr 1fr 1.3fr;
+        text-align: left;
+    }
+
+    .footer-bottom {
+        text-align: left;
     }
 }
 
