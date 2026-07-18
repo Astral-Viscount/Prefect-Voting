@@ -17,22 +17,21 @@ Voters (Students who has voted)
             <th>Email</th>
             <th>Position voted for</th>
             <th>First Vote</th>
-
-            {% for voter in voters %}
-            <tr>
-                <td>{{ voter.name }}</td>
-                <td>{{ voter.email }}</td>
-                <td>{{ voter.position_voted}}</td>
-                <td>{{ voter.first_vote_time|datetime }}</td>
-            </tr>
-            
-            {% endfor %}
-
-            {% if not voters %}
-            <p>Nobody has voted yet.</p>
-            {% endif %}
-
         </tr>
+
+        {% for voter in voters %}
+        <tr>
+            <td>{{ voter.name }}</td>
+            <td>{{ voter.email }}</td>
+            <td>{{ voter.position_voted}}</td>
+            <td>{{ voter.first_vote_time|datetime }}</td>
+        </tr>
+        
+        {% endfor %}
+        
+        {% if not voters %}
+        <p>Nobody has voted yet.</p>
+        {% endif %}
 
     </table>
 

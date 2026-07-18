@@ -55,7 +55,7 @@ Voter Dashboard
                 </button>
 
                 <button type="button" class="btn glacier small"
-                        onclick="voteFor({{ entry.position.id }}, {{ candidate.id }}, {{ candidate.name }})">
+                        onclick="voteFor({{ entry.position.id }}, {{ candidate.id }}, {{ candidate.name | tojson }})">
                     Vote
                 </button>
 
