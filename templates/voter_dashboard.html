@@ -48,14 +48,17 @@ Voter Dashboard
                     …
                     {% endif %}
                 </p>
-                
+
                 <button type="button" class="btn outline small"
-                        onclick="showCandidateDetail({{ candidate.id }}, {{ entry.position.id }})">
-                    Learn more
+                        data-position-id="{{ entry.position.id }}"
+                        data-candidate-id="{{ candidate.id }}">
+                    Learn More     
                 </button>
 
-                <button type="button" class="btn glacier small"
-                        onclick="voteFor({{ entry.position.id }}, {{ candidate.id }}, {{ candidate.name | tojson }})">
+                <button type="button" class="btn glacier small vote-btn"
+                        data-position-id="{{ entry.position.id }}"
+                        data-candidate-id="{{ candidate.id }}"
+                        data-candidate-name="{{ candidate.name }}">
                     Vote
                 </button>
 
