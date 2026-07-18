@@ -570,11 +570,21 @@ def admin_elections():
 
         elif action == "toggle_active":
             election_id = request.form.get("election_id")
+            election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
 
-            execute_db("UPDATE Election SET is_active = 0")
-            execute_db("UPDATE Election SET is_active = 1 WHERE id = ?", (election_id,))
+            if not election:
+                flash("Election not found.", "error")
+            else:
+                end = parse_date(election["end_date"])
 
-            flash("Election activated. All other elections were deactivated.", "success")
+                if end and datetime.now() > end:
+                    flash("Can't activate this election — its end time has already passed. Please Create a new one.", "error")
+                else:
+                    execute_db("UPDATE Election SET is_active = 0")
+                    execute_db("UPDATE Election SET is_active = 1 WHERE id = ?", (election_id,))
+                    flash("Election activated. All other elections were deactivated.", "success")
+
+            return redirect("/admin/elections")
 
         elif action == "deactivate":
             election_id = request.form.get("election_id")
