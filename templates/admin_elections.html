@@ -74,7 +74,33 @@ Manage Elections
 
                 </form>
                 <a href="/admin/positions?election_id={{ election.id }}" class="btn outline small">Positions</a>
+                <button type="button" class="btn outline small edit-election-btn" data-election-id="{{ election.id }}">Edit</button>
 
+            </td>
+        </tr>
+
+        <tr id="edit-row-{{ election.id }}" class="edit-election-row hidden">
+            <td colspan="4">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="action" value="update_dates">
+                    <input type="hidden" name="election_id" value="{{ election.id }}">
+
+                    <label>Title</label>
+                    <input type="text" name="title" value="{{ election.title }}" required>
+
+                    <label>Description</label>
+                    <textarea name="description" rows="3">{{ election.description or "" }}</textarea>
+
+                    <label>Start date/time</label>
+                    <input type="datetime-local" name="start_date" value="{{ election.start_date or "" }}">
+
+                    <label>End date/time</label>
+                    <input type="datetime-local" name="end_date" value="{{ election.end_date or "" }}">
+
+                    <button type="submit" class="btn glacier small" style="margin-top:10px;">Save Changes</button>
+                    <button type="button" class="btn outline small cancel-edit-btn" data-election-id="{{ election.id }}">Cancel</button>
+                </form>
             </td>
         </tr>
 
@@ -82,5 +108,9 @@ Manage Elections
 
     </table>
 </div>
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin_elections.js') }}"></script>
+{% endblock %}
 
 {% endblock %}

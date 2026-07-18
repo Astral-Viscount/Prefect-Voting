@@ -583,6 +583,7 @@ def admin_elections():
         elif action == "toggle_active":
             election_id = request.form.get("election_id")
             election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+            curr_election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
 
             if not election:
                 flash("Election not found.", "error")
@@ -590,22 +591,29 @@ def admin_elections():
                 end = parse_date(election["end_date"])
 
                 if end and datetime.now() > end:
-                    flash("Can't activate this election — its end time has already passed. Please Create a new one.", "error")
+                    flash(f"Can't activate '{curr_election['title']}' — its end time has already passed. Please Create a new one or edit it's end time", "error")
                 else:
                     execute_db("UPDATE Election SET is_active = 0")
                     execute_db("UPDATE Election SET is_active = 1 WHERE id = ?", (election_id,))
-                    flash("Election activated. All other elections were deactivated.", "success")
+                    flash(f"'{election['title']}' activated. All other elections were deactivated.", "success")
 
             return redirect("/admin/elections")
 
         elif action == "deactivate":
             election_id = request.form.get("election_id")
+            curr_election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
 
             execute_db("UPDATE Election SET is_active = 0 WHERE id = ?", (election_id,))
 
-            flash("Election closed.", "info")
+            if curr_election:
+                flash(f"'{curr_election['title']}' closed.", "info")
+            else:
+                flash("Election closed.", "info")
 
         elif action == "update_dates":
+            election_id = request.form.get("election_id")
+            curr_election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+
             execute_db("""
                 UPDATE Election SET title=?, description=?, start_date=?, end_date=?
                 WHERE id=?
@@ -617,7 +625,10 @@ def admin_elections():
                 request.form.get("election_id"),
             ))
 
-            flash("Election updated.", "success")
+            if curr_election:
+                flash(f"'{curr_election['title']}' updated.", "info")
+            else:
+                flash("Election updated.", "info")
 
         return redirect("/admin/elections")
 

@@ -678,6 +678,15 @@ body {
     height: 420px;
 }
 
+.edit-election-row.hidden {
+    display: none;
+}
+
+.edit-election-row td {
+    background: #f4f8f6;
+    padding: 16px;
+}
+
 #level-select.information {
     color: var(--bhs-glacier-green);
 }
