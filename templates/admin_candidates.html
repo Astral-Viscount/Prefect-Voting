@@ -44,8 +44,8 @@ Manage Candidates
         <select name="position_id" required>
             <option value="">Choose a position</option>
 
-            {% for p in positions %}
-            <option value="{{ p.id }}">{{ p.position_name }}</option>
+            {% for position in positions %}
+            <option value="{{ p.id }}">{{ position.position_name }}</option>
             {% endfor %}
 
         </select>
@@ -67,17 +67,17 @@ Manage Candidates
             <th>Actions</th>
         </tr>
 
-        {% for c in candidates %}
+        {% for candidate in candidates %}
         <tr>
-            <td>{{ c.name }}</td>
-            <td>{{ c.email }}</td>
-            <td>{{ c.position_name }}</td>
+            <td>{{ candidate.name }}</td>
+            <td>{{ candidate.email }}</td>
+            <td>{{ candidate.position_name }}</td>
 
             <td>
                 <form method="POST" style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="action" value="remove">
-                    <input type="hidden" name="candidate_id" value="{{ c.id }}">
+                    <input type="hidden" name="candidate_id" value="{{ candidate.id }}">
                     <input type="hidden" name="election_id" value="{{ election_id }}">
 
                     <button type="submit" class="btn danger small" onclick="return confirm('Remove this candidate?');">Remove</button>

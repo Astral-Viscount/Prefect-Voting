@@ -15,11 +15,11 @@ Manage Positions
     <select id="election-select" onchange="window.location.href='/admin/positions?election_id=' + this.value">
         <option value="">Select an election</option>
 
-        {% for e in elections %}
-        <option value="{{ e.id }}" 
-            {% if election_id == e.id %}
+        {% for election in elections %}
+        <option value="{{ election.id }}" 
+            {% if election_id == election.id %}
             selected
-            {% endif %}>{{ e.title }}
+            {% endif %}>{{ election.title }}
         </option>
         {% endfor %}
 
@@ -56,17 +56,17 @@ Manage Positions
             <th>Actions</th>
         </tr>
 
-        {% for p in positions %}
+        {% for position in positions %}
 
         <tr>
-            <td>{{ p.position_name }}</td>
-            <td>{{ p.max_votes }}</td>
+            <td>{{ position.position_name }}</td>
+            <td>{{ position.max_votes }}</td>
             <td>
 
                 <form method="POST" style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="position_id" value="{{ p.id }}">
+                    <input type="hidden" name="position_id" value="{{ position.id }}">
                     <input type="hidden" name="election_id" value="{{ election_id }}">
 
                     <button type="submit" class="btn danger small" onclick="return confirm('Delete this position?');">Remove</button>

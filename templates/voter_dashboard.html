@@ -35,27 +35,27 @@ Voter Dashboard
 
         <div class="candidate-grid">
 
-        {% for c in entry.candidates %}
+        {% for candidate in entry.candidates %}
 
             <div class="candidate-card">
-                {% if c.media.photo %}
-                <img src="{{ c.media.photo }}" alt="{{ c.name }}" class="candidate-photo">
+                {% if candidate.media.photo %}
+                <img src="{{ candidate.media.photo }}" alt="{{ candidate.name }}" class="candidate-photo">
                 {% endif %}
 
-                <h4>{{ c.name }}</h4>
-                <p class="candidate-bio">{{ c.bio[:140] }}
-                    {% if c.bio and c.bio|length > 140 %}
+                <h4>{{ candidate.name }}</h4>
+                <p class="candidate-bio">{{ candidate.bio[:140] }}
+                    {% if candidate.bio and candidate.bio|length > 140 %}
                     …
                     {% endif %}
                 </p>
                 
                 <button type="button" class="btn outline small"
-                        onclick="showCandidateDetail({{ c.id }}, {{ entry.position.id }})">
+                        onclick="showCandidateDetail({{ candidate.id }}, {{ entry.position.id }})">
                     Learn more
                 </button>
 
                 <button type="button" class="btn glacier small"
-                        onclick="voteFor({{ entry.position.id }}, {{ c.id }}, '{{ c.name }}')">
+                        onclick="voteFor({{ entry.position.id }}, {{ candidate.id }}, {{ candidate.name }})">
                     Vote
                 </button>
 
