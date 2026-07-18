@@ -355,12 +355,12 @@ def voter_dashboard():
             )
 
             positions.append({
-                "position": dict(pos),
+                "position": dict(raw_position),
                 "candidates": candidates_list,
                 "has_voted": already_voted is not None,
             })
 
-    return render_template("voter_dashboard.html", user=user, election=election, positions=raw_positions, voting_open=is_open, voting_message=message)
+    return render_template("voter_dashboard.html", user=user, election=election, positions=positions, voting_open=is_open, voting_message=message)
 
 @app.route("/vote/<int:position_id>/<int:candidate_id>", methods=["POST"])
 @login_required
