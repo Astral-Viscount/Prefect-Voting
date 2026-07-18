@@ -253,6 +253,17 @@ def log_admin_action(action, details="", admin_id="__unset__"):
 
     execute_db("INSERT INTO AuditLog (admin_id, action, details) VALUES (?, ?, ?)", (admin_id, action, details))
 
+def is_candidate_in_election(user_id, election_id):
+    row = query_db("""
+        SELECT Candidates.id
+        FROM Candidates
+        JOIN Positions ON Candidates.position_id = Positions.id
+        WHERE Candidates.user_id = ? AND Positions.election_id = ?
+        LIMIT 1
+    """, (user_id, election_id), one=True)
+
+    return row is not None
+
 @app.route("/")
 def home():
     return render_template("index.html", user=session.get("user_name"))
@@ -726,6 +737,74 @@ def admin_candidates():
         """, (election_id,))
 
     return render_template("admin_candidates.html", elections=elections, positions=positions, candidates=candidates, election_id=election_id)
+
+@app.route("/candidate/results")
+@candidate_required
+def candidate_results_list():
+    user = get_current_user()
+
+    elections = query_db("""
+        SELECT DISTINCT Election.*
+        FROM Candidates
+        JOIN Positions ON Candidates.position_id = Positions.id
+        JOIN Election ON Positions.election_id = Election.id
+        WHERE Candidates.user_id = ? AND Election.is_active = 0
+        ORDER BY Election.id DESC
+    """, (user["id"],))
+
+    return render_template("candidate_results_list.html", elections=elections)
+
+@app.route("/candidate/results/<int:election_id>")
+@candidate_required
+def candidate_results(election_id):
+    user = get_current_user()
+    election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+
+    if not election or election["is_active"]:
+        abort(403)
+
+    if not is_candidate_in_election(user["id"], election_id):
+        abort(403)
+
+    positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election_id,))
+
+    return render_template("candidate_results.html", election=election, positions=positions)
+
+@app.route("/candidate/api/results/<int:position_id>")
+@candidate_required
+def candidate_api_results(position_id):
+    user = get_current_user()
+    position = query_db("SELECT * FROM Positions WHERE id=?", (position_id,), one=True)
+
+    if not position:
+        return jsonify({"error": "not found"}), 404
+
+    election = query_db("SELECT * FROM Election WHERE id=?", (position["election_id"],), one=True)
+
+    if not election or election["is_active"]:
+        return jsonify({"error": "Results aren't available until this election has closed."}), 403
+
+    if not is_candidate_in_election(user["id"], election["id"]):
+        return jsonify({"error": "forbidden"}), 403
+
+    rows = query_db("""
+        SELECT Users.name AS name, COUNT(Votes.id) AS votes
+        FROM Candidates
+        JOIN Users ON Candidates.user_id = Users.id
+        LEFT JOIN Votes ON Votes.candidate_id = Candidates.id
+        WHERE Candidates.position_id = ?
+        GROUP BY Candidates.id
+        ORDER BY votes DESC, Users.name ASC
+    """, (position_id,))
+
+    candidates = [{"name": r["name"], "votes": int(r["votes"])} for r in rows]
+    total_votes = sum(c["votes"] for c in candidates)
+
+    return jsonify({
+        "position_name": position["position_name"],
+        "candidates": candidates,
+        "total_votes": total_votes
+    })
 
 @app.route("/admin/api/results/<int:position_id>")
 @admin_required
