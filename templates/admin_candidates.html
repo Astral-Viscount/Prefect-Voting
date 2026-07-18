@@ -59,6 +59,7 @@ Manage Candidates
 <div class="card">
     <h3>Current Candidates</h3>
 
+    <div class="table-responsive">
     <table>
         <tr>
             <th>Name</th>
@@ -88,7 +89,8 @@ Manage Candidates
         {% endfor %}
 
     </table>
-
+    </div>
+    
     {% if not candidates %}
     <p>No candidates assigned yet.</p>
     {% endif %}
