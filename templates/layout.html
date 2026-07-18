@@ -39,7 +39,7 @@
 
                 {% else %}
                     <a href="/voter/results">My Results</a>
-                    
+
                 {% endif %}
             {% endif %}
 
@@ -97,8 +97,14 @@
             <div class="footer-col">
                 <h4>Quick Links</h4>
                 <a href="/">Home</a>
-                <a href="/dashboard">Dashboard</a>
-                <a href="/login">Login</a>
+
+                {% if session.get('user_id') %}
+                    <a href="/dashboard">Dashboard</a>
+
+                {% else %}
+                    <a href="/login">Login</a>
+                    
+                {% endif %}
             </div>
 
             <div class="footer-col">
