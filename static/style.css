@@ -687,6 +687,11 @@ body {
     padding: 16px;
 }
 
+.action-buttons form .btn {
+    min-width: 108px;
+    text-align: center;
+}
+
 #level-select.information {
     color: var(--bhs-glacier-green);
 }

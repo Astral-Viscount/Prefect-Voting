@@ -58,24 +58,26 @@ Manage Elections
             </td>
 
             <td>
-                <form method="POST" style="display:inline;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="election_id" value="{{ election.id }}">
+                <div class="action-buttons">
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="election_id" value="{{ election.id }}">
 
-                    {% if election.is_active %}
-                        <input type="hidden" name="action" value="deactivate">
-                        <button type="submit" class="btn danger small">Deactivate</button>
+                        {% if election.is_active %}
+                            <input type="hidden" name="action" value="deactivate">
+                            <button type="submit" class="btn danger small">Deactivate</button>
 
-                    {% else %}
-                        <input type="hidden" name="action" value="toggle_active">
-                        <button type="submit" class="btn glacier small">Activate</button>
+                        {% else %}
+                            <input type="hidden" name="action" value="toggle_active">
+                            <button type="submit" class="btn glacier small">Activate</button>
 
-                    {% endif %}
+                        {% endif %}
 
-                </form>
-                <a href="/admin/positions?election_id={{ election.id }}" class="btn outline small">Positions</a>
-                <button type="button" class="btn outline small edit-election-btn" data-election-id="{{ election.id }}">Edit</button>
-
+                    </form>
+                    <a href="/admin/positions?election_id={{ election.id }}" class="btn outline small">Positions</a>
+                    <button type="button" class="btn outline small edit-election-btn" data-election-id="{{ election.id }}">Edit</button>
+                
+                </div>
             </td>
         </tr>
 
