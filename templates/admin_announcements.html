@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Announcements
+{% endblock %}
+
+{% block content %}
+<p class="admin-breadcrumb"><a href="/admin">Back to Admin Dashboard</a></p>
+
+<div class="card">
+    <h2>Post an Announcement</h2>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" value="create">
+        <label>Message</label>
+        <textarea name="message" rows="2" maxlength="300" required></textarea>
+
+        <label>Level</label>
+        <select name="level" id="level-select" onchange="this.className = this.value;">
+            <option value="information">Information</option>
+            <option value="warning">Warning</option>
+            <option value="emergency">Emergency/Urgent</option>
+        </select>
+
+        <button type="submit" class="btn glacier" style="margin-top:14px;">Post</button>
+    </form>
+
+</div>
+
+<div class="card">
+    <h2>Active & Recent Announcements</h2>
+
+    <table>
+        <tr>
+            <th>Message</th>
+            <th>Level</th>
+            <th>Posted</th>
+        </tr>
+
+        {% for announcement in announcements %}
+        <tr>
+            <td>{{ announcement.message }}</td>
+            <td>{{ announcement.level }}</td>
+            <td>{{ announcement.created_at|datetime }}</td>
+            <td>
+                {% if announcement.is_active %}
+
+                <form method="POST" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="action" value="deactivate">
+                    <input type="hidden" name="announcement_id" value="{{ announcement.id }}">
+                    <button type="submit" class="btn danger small">Remove</button>
+                </form>
+
+                {% else %}
+                <span class="badge voter">Removed</span>
+
+                {% endif %}
+            </td>
+
+        </tr>
+        {% endfor %}
+
+    </table>
+</div>
+
+{% endblock %}

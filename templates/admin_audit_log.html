@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Audit Log
+{% endblock %}
+
+{% block content %}
+<p class="admin-breadcrumb"><a href="/admin">Back to Admin Dashboard</a></p>
+
+<div class="card">
+    <h2>Administrative Audit Log</h2>
+
+    <p>Administrative Actions</p>
+
+    <table>
+        <tr>
+            <th>Time</th>
+            <th>Admin</th>
+            <th>Action</th>
+            <th>Details</th>
+        </tr>
+
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.created_at|datetime }}</td>
+            <td>{{ log.admin_name or "System (automatic)" }}</td>
+            <td>{{ log.action }}</td>
+            <td>{{ log.details }}</td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</div>
+
+{% endblock %}

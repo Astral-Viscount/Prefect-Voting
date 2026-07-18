@@ -36,13 +36,25 @@
                 <a href="/admin/manage-admins">Manage Admins</a>
             {% endif %}
 
-            <span class="nav-user">{{ session.get('user_name') }}</span>
-            <a href="/logout" class="btn small outline">Logout</a>
+            <div class="nav-account">
+                <span class="nav-user">{{ session.get('user_name') }}</span>
+                <a href="/logout" class="btn danger">Log out</a>
+            </div>
 
         </nav>
         {% endif %}
 
     </header>
+
+    {% if site_announcements %}
+        <div class="announcement-stack">
+
+        {% for site_announcement in site_announcements %}
+            <div class="announcement announcement-{{ site_announcement.level }}">{{ site_announcement.message }}</div>
+        {% endfor %}
+
+        </div>
+    {% endif %}
 
     <main class="site-main">
         {% with messages = get_flashed_messages(with_categories=true) %}

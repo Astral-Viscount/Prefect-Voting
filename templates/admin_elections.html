@@ -41,14 +41,14 @@ Manage Elections
             <th>Actions</th>
         </tr>
 
-        {% for e in elections %}
+        {% for election in elections %}
 
         <tr>
-            <td>{{ e.title }}</td>
-            <td>{{ e.start_date or "—" }} to {{ e.end_date or "—" }}</td>
+            <td>{{ election.title }}</td>
+            <td>{{ election.start_date or "—" }} to {{ election.end_date or "—" }}</td>
 
             <td>
-                {% if e.is_active %}
+                {% if election.is_active %}
                 <span class="badge candidate">Live</span>
 
                 {% else %}
@@ -60,9 +60,9 @@ Manage Elections
             <td>
                 <form method="POST" style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="election_id" value="{{ e.id }}">
+                    <input type="hidden" name="election_id" value="{{ election.id }}">
 
-                    {% if e.is_active %}
+                    {% if election.is_active %}
                         <input type="hidden" name="action" value="deactivate">
                         <button type="submit" class="btn danger small">Close</button>
 
@@ -73,7 +73,7 @@ Manage Elections
                     {% endif %}
 
                 </form>
-                <a href="/admin/positions?election_id={{ e.id }}" class="btn outline small">Positions</a>
+                <a href="/admin/positions?election_id={{ election.id }}" class="btn outline small">Positions</a>
 
             </td>
         </tr>

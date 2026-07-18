@@ -88,7 +88,7 @@ def execute_db(query, args=()):
 def verify_google_token(token):
 
     try:
-        idinfo = id_token.verify_oauth2_token(
+        id_info = id_token.verify_oauth2_token(
         token,
         requests.Request(),
         GOOGLE_CLIENT_ID
@@ -96,7 +96,7 @@ def verify_google_token(token):
     except Exception:
         return None
 
-    email = idinfo["email"].lower()
+    email = id_info["email"].lower()
 
     is_school_account = email.endswith(SCHOOL_DOMAIN)
     is_allowlisted_admin = email in ADMIN_EMAILS
@@ -105,13 +105,13 @@ def verify_google_token(token):
         return None
 
     return {
-        "google_id": idinfo["sub"],
+        "google_id": id_info["sub"],
         "email": email,
-        "name": idinfo["name"],
+        "name": id_info["name"],
         "should_be_admin": is_allowlisted_admin
     }
 
-# Wrapper functions
+# Helper functions
 
 # Flask's 'g' object to cache the user for the rest of the session
 def get_current_user():
@@ -174,6 +174,7 @@ def admin_required(view):
         if user is None:
             session.clear()
             return redirect("/login")
+
         if not user["is_admin"]:
             return render_template("403.html"), 403
 
@@ -184,8 +185,10 @@ def admin_required(view):
 def parse_date(value):
     if not value:
         return None
+
     try:
         return datetime.fromisoformat(value)
+
     except ValueError:
         return datetime.fromisoformat(value + ":00")
 
@@ -228,19 +231,24 @@ def csrf_protect():
 def check_expired_elections():
     update_expired_elections()
 
+def log_admin_action(action, details="", admin_id="__unset__"):
+    if admin_id == "__unset__":
+        admin = get_current_user()
+    
+        if admin:
+            admin_id = admin["id"]
+        else:
+            admin_id = None
+
+    execute_db("INSERT INTO AuditLog (admin_id, action, details) VALUES (?, ?, ?)", (admin_id, action, details))
+
 @app.route("/")
 def home():
-    return render_template(
-        "index.html",
-        user=session.get("user_name")
-    )
+    return render_template("index.html", user=session.get("user_name"))
 
 @app.route("/login")
 def login_page():
-    return render_template(
-        "login.html",
-        client_id=GOOGLE_CLIENT_ID
-    )
+    return render_template("login.html", client_id=GOOGLE_CLIENT_ID )
 
 @app.route("/login", methods=["POST"])
 def login_data():
@@ -252,11 +260,7 @@ def login_data():
     if not user_data:
         return jsonify({"error": "Unauthorized domain"}), 403
 
-    user = query_db(
-        "SELECT * FROM Users WHERE google_id=?",
-        (user_data["google_id"],),
-        one=True
-    )
+    user = query_db("SELECT * FROM Users WHERE google_id=?", (user_data["google_id"],), one=True)
 
     if not user:
         if user_data["should_be_admin"]:
@@ -266,7 +270,7 @@ def login_data():
 
         try:
             execute_db("""INSERT INTO Users (google_id, email, name, is_admin) VALUES (?, ?, ?, ?)""", 
-                    (user_data["google_id"], user_data["email"], user_data["name"], is_admin_val))
+                        (user_data["google_id"], user_data["email"], user_data["name"], is_admin_val))
 
         except sqlite3.IntegrityError:
             pass 
@@ -318,31 +322,36 @@ def voter_dashboard():
     positions = []
 
     if election:
-        raw_position = query_db("SELECT * FROM Positions WHERE election_id=?", (election["id"],))
+        raw_positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election["id"],))
 
-        for pos in raw_position:
+        for raw_position in raw_positions:
             candidates = query_db("""
                 SELECT Candidates.id AS candidate_id, Candidates.bio, Candidates.photo,
                     Users.name AS candidate_name
                 FROM Candidates
                 JOIN Users ON Candidates.user_id = Users.id
                 WHERE Candidates.position_id = ?
-            """, (pos["id"],))
+            """, (raw_position["id"],))
 
             candidates_list = []
 
-            for c in candidates:
-                media = json.loads(c["photo"]) if c["photo"] else {}
+            for candidate in candidates:
+
+                if candidate["photo"]:
+                    media = json.loads(candidate["photo"])
+                else:
+                    media = {}
+                    
                 candidates_list.append({
-                        "id": c["candidate_id"],
-                        "name": c["candidate_name"],
-                        "bio": c["bio"],
+                        "id": candidate["candidate_id"],
+                        "name": candidate["candidate_name"],
+                        "bio": candidate["bio"],
                         "media": media,
                 })
             
             already_voted = query_db(
                 "SELECT id FROM Votes WHERE voter_id=? AND position_id=?",
-                (user["id"], pos["id"]), one=True
+                (user["id"], raw_position["id"]), one=True
             )
 
             positions.append({
@@ -351,7 +360,7 @@ def voter_dashboard():
                 "has_voted": already_voted is not None,
             })
 
-    return render_template("voter_dashboard.html", user=user, election=election, positions=positions, voting_open=is_open, voting_message=message)
+    return render_template("voter_dashboard.html", user=user, election=election, positions=raw_positions, voting_open=is_open, voting_message=message)
 
 @app.route("/vote/<int:position_id>/<int:candidate_id>", methods=["POST"])
 @login_required
@@ -411,7 +420,10 @@ def candidate_dashboard():
 
         vote_count = row["c"]
 
-    media = json.loads(candidate_row["photo"]) if candidate_row and candidate_row["photo"] else {}
+    if candidate_row and candidate_row["photo"]:
+        media = json.loads(candidate_row["photo"])
+    else:
+        media = {}
 
     return render_template("candidate_dashboard.html", user=user, candidate=candidate_row, media=media, vote_count=vote_count)
 
@@ -514,6 +526,12 @@ def inject_csrf_token():
         session["csrf_token"] = secrets_lib.token_hex(32)
         
     return dict(csrf_token=session["csrf_token"])
+
+@app.context_processor
+def inject_announcements():
+    active = query_db("SELECT * FROM Announcements WHERE is_active=1 ORDER BY id DESC")
+
+    return dict(site_announcements=active)
 
 def voting_is_open(election):
     if not election or not election["is_active"]:
@@ -698,12 +716,23 @@ def api_results(position_id):
         ORDER BY votes DESC, Users.name ASC
     """, (position_id,))
 
-    candidates = [{"name": r["name"], "votes": int(r["votes"])} for r in rows]
+    candidates = []
+
+    for r in rows:
+        candidate_data = {
+            "name": r["name"], 
+            "votes": int(r["votes"])
+        }
+        candidates.append(candidate_data)
+
+    total_votes = 0
+    for c in candidates:
+        total_votes += c["votes"]
 
     return jsonify({
         "position_name": position["position_name"],
         "candidates": candidates,
-        "total_votes": sum(c["votes"] for c in candidates)
+        "total_votes": total_votes
     })
 
 @app.route("/admin/api/turnout")
@@ -784,14 +813,54 @@ def manage_admins():
 
     if search:
         users = query_db(
-            "SELECT * FROM Users WHERE email LIKE ? OR name LIKE ? ORDER BY name",
-            (f"%{search}%", f"%{search}%")
-        )
+            "SELECT * FROM Users WHERE email LIKE ? OR name LIKE ? ORDER BY name", (f"%{search}%", f"%{search}%"))
         
     else:
         users = query_db("SELECT * FROM Users ORDER BY is_admin DESC, name")
 
     return render_template("admin_manage_admins.html", users=users, search=search)
+
+@app.route("/admin/announcements", methods=["GET", "POST"])
+@admin_required
+def admin_announcements():
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "create":
+            message = request.form.get("message", "").strip()[:300]
+            level = request.form.get("level", "info")
+
+            if message:
+                execute_db(
+                    "INSERT INTO Announcements (message, level, created_by) VALUES (?, ?, ?)", (message, level, session["user_id"]))
+                
+                log_admin_action("create_announcement", message)
+                flash("Announcement posted.", "success")
+
+        elif action == "deactivate":
+            announcement_id = request.form.get("announcement_id")
+            execute_db("UPDATE Announcements SET is_active=0 WHERE id=?", (announcement_id,))
+
+            log_admin_action("deactivate_announcement", f"id={announcement_id}")
+            flash("Announcement removed.", "info")
+
+        return redirect("/admin/announcements")
+
+    announcements = query_db("SELECT * FROM Announcements ORDER BY id DESC LIMIT 50")
+
+    return render_template("admin_announcements.html", announcements=announcements)
+
+@app.route("/admin/audit-log")
+@admin_required
+def admin_audit_log():
+    logs = query_db("""
+        SELECT AuditLog.*, Users.name AS admin_name
+        FROM AuditLog LEFT JOIN Users ON AuditLog.admin_id = Users.id
+        ORDER BY AuditLog.id DESC
+        LIMIT 200
+    """)
+    
+    return render_template("admin_audit_log.html", logs=logs)
 
 if __name__ == "__main__":
     app.run(debug=True)

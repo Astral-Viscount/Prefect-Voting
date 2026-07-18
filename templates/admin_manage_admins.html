@@ -24,12 +24,12 @@ Manage Admins
             <th>Action</th>
         </tr>
 
-        {% for u in users %}
+        {% for user in users %}
         <tr>
-            <td>{{ u.name }}</td>
-            <td>{{ u.email }}</td>
+            <td>{{ user.name }}</td>
+            <td>{{ user.email }}</td>
             <td>
-                {% if u.is_admin %}
+                {% if user.is_admin %}
                 <span class="badge admin">Admin</span>
                 {% else %}
                 <span class="badge voter">Voter</span>
@@ -39,9 +39,9 @@ Manage Admins
             <td>
                 <form method="POST" style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
 
-                    {% if u.is_admin %}
+                    {% if user.is_admin %}
                         <input type="hidden" name="action" value="demote">
                         <button type="submit" class="btn danger small">Demote</button>
 
