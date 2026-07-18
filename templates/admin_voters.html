@@ -11,6 +11,10 @@ Voters (Students who has voted)
 <div class="card">
     <h2>Voters who participated in {{ election.title if election else "No election"}}</h2>
 
+    <form method="GET" style="margin-bottom:16px;">
+        <input type="text" name="q" placeholder="Search by name or email" value="{{ search }}">
+    </form>
+
     <table>
         <tr>
             <th>Name</th>
@@ -23,7 +27,7 @@ Voters (Students who has voted)
         <tr>
             <td>{{ voter.name }}</td>
             <td>{{ voter.email }}</td>
-            <td>{{ voter.positions_voted}}</td>
+            <td>{{ voter.positions_voted }}</td>
             <td>{{ voter.first_vote_time|datetime }}</td>
         </tr>
         

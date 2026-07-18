@@ -779,23 +779,31 @@ def admin_results():
 @admin_required
 def admin_voters():
     election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+    search = request.args.get("q", "").strip()
 
     voters = []
 
     if election:
-        voters = query_db("""
+        query = """
             SELECT Users.id, Users.name, Users.email,
                    MIN(Votes.time) AS first_vote_time,
-                   COUNT(Votes.id) AS positions_voted
+                   GROUP_CONCAT(Positions.position_name, ', ') AS positions_voted
             FROM Votes
             JOIN Positions ON Votes.position_id = Positions.id
             JOIN Users ON Votes.voter_id = Users.id
             WHERE Positions.election_id = ?
-            GROUP BY Users.id
-            ORDER BY Users.name
-        """, (election["id"],))
+        """
+        params = [election["id"]]
 
-    return render_template("admin_voters.html", election=election, voters=voters)
+        if search:
+            query += " AND (Users.name LIKE ? OR Users.email LIKE ?)"
+            params += [f"%{search}%", f"%{search}%"]
+
+        query += " GROUP BY Users.id ORDER BY Users.name"
+
+        voters = query_db(query, tuple(params))
+
+    return render_template("admin_voters.html", election=election, voters=voters, search=search)
 
 @app.route("/admin/manage-admins", methods=["GET", "POST"])
 @admin_required
