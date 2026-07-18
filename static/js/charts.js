@@ -9,6 +9,14 @@ const PALETTE = [
 
 const chartState = {};
 
+function getColor(i) {
+    if (i < PALETTE.length) {
+        return PALETTE[i];
+    }
+    const hue = (i * 137.508) % 360; // golden angle to make the new colors look unique
+    return `hsl(${hue}, 55%, 42%)`;
+}
+
 async function fetchResults(positionId) {
     const res = await fetch(`/admin/api/results/${positionId}`);
 
@@ -42,9 +50,7 @@ function createChart(positionId, type, data) {
 
                 data: data.candidates.map(c => c.votes),
 
-                backgroundColor: data.candidates.map(
-                    (_, i) => PALETTE[i % PALETTE.length]
-                ),
+                backgroundColor: data.candidates.map((_, i) => getColor(i)),
 
                 borderWidth: 1
             }]
