@@ -3,11 +3,13 @@ import sqlite3
 conn = sqlite3.connect("voting.db")
 cursor = conn.cursor()
 
-cursor.execute("DROP TABLE IF EXISTS Votes")
-cursor.execute("DROP TABLE IF EXISTS Candidates")
-cursor.execute("DROP TABLE IF EXISTS Positions")
-cursor.execute("DROP TABLE IF EXISTS Election")
-cursor.execute("DROP TABLE IF EXISTS Users")
+# cursor.execute("DROP TABLE IF EXISTS Votes")
+# cursor.execute("DROP TABLE IF EXISTS Candidates")
+# cursor.execute("DROP TABLE IF EXISTS Positions")
+# cursor.execute("DROP TABLE IF EXISTS Election")
+# cursor.execute("DROP TABLE IF EXISTS Users")
+# cursor.execute("DROP TABLE IF EXISTS Announcements")
+# cursor.execute("DROP TABLE IF EXISTS AuditLog")
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS Users(
@@ -64,6 +66,29 @@ CREATE TABLE IF NOT EXISTS Votes(
     FOREIGN KEY(voter_id) REFERENCES Users(id),
     FOREIGN KEY(position_id) REFERENCES Positions(id),
     FOREIGN KEY(candidate_id) REFERENCES Candidates(id)
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS Announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message TEXT NOT NULL,
+    level TEXT DEFAULT 'info',
+    created_by INTEGER,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    is_active INTEGER DEFAULT 1,
+    FOREIGN KEY(created_by) REFERENCES Users(id)
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS AuditLog (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    admin_id INTEGER,
+    action TEXT NOT NULL,
+    details TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(admin_id) REFERENCES Users(id)
 )
 """)
 
