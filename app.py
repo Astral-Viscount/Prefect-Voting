@@ -32,12 +32,18 @@ app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 8
 
 # More efficient as it uses a set comprehension
 ADMIN_EMAILS = {
-    e.strip().lower()
-    for e in os.getenv("ADMIN_EMAILS", "").split(",")
-    if e.strip()
+    admin_email.strip().lower()
+    for admin_email in os.getenv("ADMIN_EMAILS", "").split(",")
+    if admin_email.strip()
 }
 
-SCHOOL_DOMAIN = os.getenv("SCHOOL_DOMAIN", "@burnside.school.nz").lower()
+# SCHOOL_DOMAIN = os.getenv("SCHOOL_DOMAIN", "@burnside.school.nz").lower()
+#for debugging
+SCHOOL_DOMAINS = {
+    school_domain.strip().lower()
+    for school_domain in os.getenv("SCHOOL_DOMAIN").split(",")
+    if school_domain.strip()
+}
 # print(f"debug: school domain = {SCHOOL_DOMAIN!r}")
 
 DATABASE = "voting.db"
@@ -89,7 +95,8 @@ def verify_google_token(token):
 
     email = id_info["email"].lower()
 
-    is_school_account = email.endswith(SCHOOL_DOMAIN)
+    # is_school_account = email.endswith(SCHOOL_DOMAIN)
+    is_school_account = any(email.endswith(domain) for domain in SCHOOL_DOMAINS) #for debugging
     is_allowlisted_admin = email in ADMIN_EMAILS
 
     if not (is_school_account or is_allowlisted_admin):
