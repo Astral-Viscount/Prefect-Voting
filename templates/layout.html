@@ -41,6 +41,15 @@
                     <a href="/voter/results">My Results</a>
 
                 {% endif %}
+            
+            {% else %}
+                <a href="/admin/elections">Elections</a>
+                <a href="/admin/results">Results</a>
+                <a href="/admin/voters">Voters</a>
+                <a href="/admin/announcements">Announcements</a>
+                <a href="/admin/audit-log">Audit Log</a>
+                <a href="/admin/manage-admins">Manage Admins</a> 
+                
             {% endif %}
 
             <div class="nav-account">
@@ -103,7 +112,7 @@
 
                 {% else %}
                     <a href="/login">Login</a>
-                    
+
                 {% endif %}
             </div>
 
