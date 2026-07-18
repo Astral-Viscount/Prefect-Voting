@@ -30,15 +30,6 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax" 
 app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 8
 
-""" Initial approach
-ADMIN_EMAILS = set()
-
-for e in os.getenv("ADMIN_EMAILS", "").split(","):
-    if e.strip():
-        e = e.strip().lower()
-    ADMIN_EMAILS.add(e)
-"""
-
 # More efficient as it uses a set comprehension
 ADMIN_EMAILS = {
     e.strip().lower()
