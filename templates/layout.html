@@ -36,8 +36,10 @@
                 <a href="/admin/manage-admins">Manage Admins</a>
             {% endif %}
 
-            <span class="nav-user">{{ session.get('user_name') }}</span>
-            <a href="/logout" class="btn small outline">Logout</a>
+            <div class="nav-account">
+                <span class="nav-user">{{ session.get('user_name') }}</span>
+                <a href="/logout" class="btn danger">Log out</a>
+            </div>
 
         </nav>
         {% endif %}
