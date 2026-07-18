@@ -471,6 +471,7 @@ def candidate_profile():
             if ext in ALLOWED_AUDIO_EXT:
                 filename = secure_filename(f"candidate_{candidate_row['id']}_voice.{ext}")
                 voice_file.save(os.path.join(UPLOAD_FOLDER, filename))
+                
                 media["voice"] = f"/static/uploads/candidates/{filename}"
             else:
                 flash("Voice clip must be webm, mp3, wav or ogg.", "error")

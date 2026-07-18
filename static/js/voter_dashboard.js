@@ -51,37 +51,33 @@ function closeCandidateModal() {
 }
 
 async function voteFor(positionId, candidateId, candidateName) {
-    if (!confirm(`Confirm your vote for ${candidateName}? This cannot be changed afterwards.`)) {
-        return;
-    }
+    const confirmed = await showConfirmToast(
+        `Confirm your vote for ${candidateName}? This cannot be changed afterwards.`
+    );
+    if (!confirmed) return;
 
     try {
         const res = await fetch(`/vote/${positionId}/${candidateId}`, {
             method: "POST",
-            headers: {
-                "X-CSRFToken": csrfToken
-            }
+            headers: { "X-CSRFToken": csrfToken }
         });
 
         let data = null;
-
-        try {
-            data = await res.json();
-        } catch {}
+        try { data = await res.json(); } catch {}
 
         if (res.ok && data?.success) {
-            alert("Vote recorded. Thank you!");
-            window.location.reload();
-
-        } else if (res.status === 403) {
-            alert("Your session may have expired. Please refresh the page and try again.");
-
-        } else {
-            alert(data?.error || "Something went wrong. Please refresh and try again.");
+            showToast("Vote recorded. Thank you!", "success");
+            setTimeout(() => window.location.reload(), 1200);
+        } 
+        else if (res.status === 403) {
+            showToast("Your session may have expired. Please refresh the page and try again.", "error");
+        } 
+        else {
+            showToast(data?.error || "Something went wrong. Please refresh and try again.", "error");
         }
-
-    } catch (err) {
+    } 
+    catch (err) {
         console.error("Vote request failed:", err);
-        alert("Network error — please check your connection and try again.");
+        showToast("Network error — please check your connection and try again.", "error");
     }
 }

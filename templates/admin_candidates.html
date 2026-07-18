@@ -74,13 +74,13 @@ Manage Candidates
             <td>{{ candidate.position_name }}</td>
 
             <td>
-                <form method="POST" style="display:inline;">
+                <form method="POST" style="display:inline;" data-confirm="Remove this candidate?">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="action" value="remove">
                     <input type="hidden" name="candidate_id" value="{{ candidate.id }}">
                     <input type="hidden" name="election_id" value="{{ election_id }}">
-
-                    <button type="submit" class="btn danger small" onclick="return confirm('Remove this candidate?');">Remove</button>
+                    
+                    <button type="submit" class="btn danger small">Remove</button>
                 </form>
             </td>
 

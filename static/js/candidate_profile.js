@@ -26,7 +26,8 @@ recordBtn.addEventListener('click', async () => {
         recording = true;
         recordBtn.textContent = "Stop recording";
         
-    } else {
+    } 
+    else {
         mediaRecorder.stop();
         recording = false;
         recordBtn.textContent = "Record a voice introduction";
