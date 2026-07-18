@@ -850,5 +850,17 @@ def admin_announcements():
 
     return render_template("admin_announcements.html", announcements=announcements)
 
+@app.route("/admin/audit-log")
+@admin_required
+def admin_audit_log():
+    logs = query_db("""
+        SELECT AuditLog.*, Users.name AS admin_name
+        FROM AuditLog LEFT JOIN Users ON AuditLog.admin_id = Users.id
+        ORDER BY AuditLog.id DESC
+        LIMIT 200
+    """)
+    
+    return render_template("admin_audit_log.html", logs=logs)
+
 if __name__ == "__main__":
     app.run(debug=True)
