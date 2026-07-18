@@ -236,7 +236,7 @@ def log_admin_action(action, details="", admin_id="__unset__"):
         admin = get_current_user()
     
         if admin:
-            admin_id = admin_id["id"]
+            admin_id = admin["id"]
         else:
             admin_id = None
 
@@ -838,10 +838,10 @@ def admin_announcements():
                 flash("Announcement posted.", "success")
 
         elif action == "deactivate":
-            ann_id = request.form.get("announcement_id")
-            execute_db("UPDATE Announcements SET is_active=0 WHERE id=?", (ann_id,))
+            announcement_id = request.form.get("announcement_id")
+            execute_db("UPDATE Announcements SET is_active=0 WHERE id=?", (announcement_id,))
 
-            log_admin_action("deactivate_announcement", f"id={ann_id}")
+            log_admin_action("deactivate_announcement", f"id={announcement_id}")
             flash("Announcement removed.", "info")
 
         return redirect("/admin/announcements")

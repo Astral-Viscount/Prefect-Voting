@@ -17,11 +17,10 @@ Announcements
         <textarea name="message" rows="2" maxlength="300" required></textarea>
 
         <label>Level</label>
-        <select name="level">
-            <option value="info">Information</option>
-            <option value="success">Success</option>
+        <select name="level" id="level-select" onchange="this.className = this.value;">
+            <option value="information">Information</option>
             <option value="warning">Warning</option>
-            <option value="danger">Emergency/Urgent</option>
+            <option value="emergency">Emergency/Urgent</option>
         </select>
 
         <button type="submit" class="btn glacier" style="margin-top:14px;">Post</button>
@@ -37,7 +36,6 @@ Announcements
             <th>Message</th>
             <th>Level</th>
             <th>Posted</th>
-            <th></th>
         </tr>
 
         {% for announcement in announcements %}

@@ -476,12 +476,7 @@ body {
     text-align: center;
 }
 
-.announcement-info {
-    background: var(--bhs-sky-blue);
-    color: #04303a;
-}
-
-.announcement-success {
+.announcement-information {
     background: var(--bhs-glacier-green);
     color: white;
 }
@@ -491,9 +486,33 @@ body {
     color: #3a2f00;
 }
 
-.announcement-danger {
+.announcement-emergency {
     background: #c0392b;
     color: white;
+}
+
+#level-select.information {
+    color: var(--bhs-glacier-green);
+}
+
+#level-select.warning {
+    color: var(--bhs-gold-accent);
+}
+
+#level-select.emergency {
+    color: #c0392b;
+}
+
+#level-select option[value="information"] { 
+    color: var(--bhs-glacier-green) 
+}
+
+#level-select option[value="warning"] { 
+    color: var(--bhs-gold-accent) 
+}
+
+#level-select option[value="emergency"] { 
+    color: #c0392b; 
 }
 
 table {
