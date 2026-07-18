@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block title %}
+My Results
+% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Election Results</h2>
+    <p>Results appear here once voting has closed for an election you took part in.</p>
+
+    <table>
+        <tr>
+            <th>Election</th>
+            <th>Closed</th>
+            <th></th>
+        </tr>
+
+        {% for election in elections %}
+        <tr>
+            <td>{{ election.title }}</td>
+            <td>{{ election.end_date|datetime }}</td>
+            <td><a href="/voter/results/{{ election.id }}" class="btn glacier small">View Results</a></td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+    {% if not elections %}
+    <p>Nothing to show yet — this only lists elections you voted in that have since closed.</p>
+    {% endif %}
+
+</div>
+
+{% endblock %}
