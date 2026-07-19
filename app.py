@@ -76,7 +76,6 @@ def query_db(query, args=(), one=False):
     cur.close()
     return (rv[0] if rv else None) if one else rv
 
-
 def execute_db(query, args=()):
     db = get_db()
     db.execute(query, args)
@@ -90,8 +89,27 @@ def verify_google_token(token):
         requests.Request(),
         GOOGLE_CLIENT_ID
         )
-    except Exception:
-        return None
+
+    except ValueError as e:
+        return jsonify({
+            "status": "error",
+            "info": "invalid token format or signature",
+            "error_message": str(e)
+        }), 401
+
+    except GoogleAuthError as e:
+        return jsonify({
+            "status": "error",
+            "info": "google authentication failed or token expired",
+            "error_message": str(e)
+        }), 401
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "info": "unexpected/unknown error",
+            "error_message": str(e)
+        }), 500
 
     email = id_info["email"].lower()
 
@@ -1015,7 +1033,8 @@ def manage_admins():
 
     if search:
         users = query_db(
-            "SELECT * FROM Users WHERE email LIKE ? OR name LIKE ? ORDER BY name", (f"%{search}%", f"%{search}%"))
+            "SELECT * FROM Users WHERE email LIKE ? OR name LIKE ? ORDER BY name", 
+            (f"%{search}%", f"%{search}%"))
         
     else:
         users = query_db("SELECT * FROM Users ORDER BY is_admin DESC, name")
