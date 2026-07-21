@@ -286,7 +286,7 @@ def home():
 
 @app.route("/login")
 def login_page():
-    return render_template("login.html", client_id=GOOGLE_CLIENT_ID )
+    return render_template("login.html", client_id=GOOGLE_CLIENT_ID)
 
 @app.route("/login", methods=["POST"])
 def login_data():
@@ -553,11 +553,11 @@ def admin_dashboard():
     return render_template("admin_dashboard.html", election=election, stats=stats)
 
 @app.errorhandler(404)
-def not_found(e):
+def not_found(error):
     return render_template("404.html"), 404
 
 @app.errorhandler(403)
-def forbidden(e):
+def forbidden(error):
     return render_template("403.html"), 403
 
 @app.context_processor
@@ -867,7 +867,7 @@ def api_results(position_id):
 @app.route("/admin/api/turnout")
 @admin_required
 def api_turnout():
-    election = get_active_election()
+    election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
 
     if not election:
         return jsonify({"voted": 0, "eligible": 0})
