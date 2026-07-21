@@ -35,6 +35,7 @@
             {% if not session.get('is_admin') %}
 
                 {% if session.get('is_candidate') %}
+                    <a href="/candidate/profile">Edit Profile</a>
                     <a href="/candidate/results">My Results</a>
 
                 {% else %}
