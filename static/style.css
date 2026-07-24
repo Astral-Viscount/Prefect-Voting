@@ -29,13 +29,10 @@ body {
         #f4f8f6 340px
     );
     color: #16221e;
-    display: flex;
-    flex-direction: column;
 }
 
 html, body {
     overflow-x: hidden;
-    height: 100%;
 }
 
 .login-card {
@@ -132,7 +129,6 @@ html, body {
     max-width: 1080px;
     margin: 0 auto;
     padding: 20px 24px 60px;
-    flex: 1;
 }
 
 .main-card, .card {
