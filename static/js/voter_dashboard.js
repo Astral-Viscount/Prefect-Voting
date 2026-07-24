@@ -11,6 +11,15 @@ document.querySelectorAll('.vote-btn').forEach(btn => {
     });
 });
 
+document.querySelectorAll('.btn.outline').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const positionId = Number(btn.dataset.positionId);
+        const candidateId = Number(btn.dataset.candidateId);
+        
+        showCandidateDetail(candidateId, positionId);
+    });
+});
+
 function findCandidate(positionId, candidateId) {
     const entry = positionsData.find(p => p.position.id === positionId);
     return entry.candidates.find(c => c.id === candidateId);
