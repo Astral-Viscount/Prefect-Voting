@@ -20,6 +20,13 @@ document.querySelectorAll('.btn.outline').forEach(btn => {
     });
 });
 
+document.getElementById('candidateModal')
+    .addEventListener('click', (event) => {
+        if (event.target.id === 'candidateModal') {
+            closeCandidateModal();
+        }
+});
+
 function findCandidate(positionId, candidateId) {
     const entry = positionsData.find(p => p.position.id === positionId);
     return entry.candidates.find(c => c.id === candidateId);
