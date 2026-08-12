@@ -161,8 +161,7 @@ html, body {
 }
 
 .btn:hover {
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
-    filter: brightness(0.9);
+    filter: brightness(0.93);
 }
 
 .btn.pounamu {
@@ -187,8 +186,12 @@ html, body {
 
 .btn.outline {
     background: transparent;
-    border-color: currentColor;
+    border-color: var(--bhs-pounamu);
     color: var(--bhs-pounamu);
+}
+
+.btn.outline:hover {
+    filter: brightness(0.05);
 }
 
 .btn.small {
@@ -382,7 +385,6 @@ html, body {
 }
 
 .admin-tool-card:hover {
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
     filter: brightness(0.9);
     border-color: var(--bhs-glacier-green);
 }
