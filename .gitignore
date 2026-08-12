@@ -25,3 +25,4 @@ test.py
 *.db
 # Won't ignore these .exe files
 # !special.exe
+/static/uploads/
