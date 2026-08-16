@@ -703,6 +703,24 @@ def admin_positions():
 
     return render_template("admin_positions.html", elections=elections, positions=positions, election_id=election_id)
 
+@app.route("/admin/api/users/search")
+@admin_required
+def api_users_search():
+    q = request.args.get("q", "").strip()
+
+    if len(q) < 2:
+        return jsonify([])
+
+    like = f"%{q}%"
+    rows = query_db("""
+        SELECT id, name, email FROM Users
+        WHERE LOWER(name) LIKE LOWER(?) OR LOWER(email) LIKE LOWER(?)
+        ORDER BY name
+        LIMIT 8
+    """, (like, like))
+
+    return jsonify([{"name": row["name"], "email": row["email"]} for row in rows])
+
 @app.route("/admin/candidates", methods=["GET", "POST"])
 @admin_required
 def admin_candidates():
@@ -712,11 +730,26 @@ def admin_candidates():
         action = request.form.get("action")
         
         if action == "assign":
-            email = request.form.get("student_email", "").strip().lower()
-            student = query_db("SELECT * FROM Users WHERE email=?", (email,), one=True)
+            query_text = request.form.get("student_query", "").strip()
+            student = None
+            error_message = None
+
+            student = query_db(
+                "SELECT * FROM Users WHERE LOWER(email)=LOWER(?)", (query_text,), one=True
+            )
 
             if not student:
-                flash("That email hasn't logged into the site yet. Ask them to sign in once first.", "error")
+                name_matches = query_db(
+                    "SELECT * FROM Users WHERE LOWER(name)=LOWER(?)", (query_text,)
+                )
+
+                if len(name_matches) == 1:
+                    student = name_matches[0]
+                elif len(name_matches) > 1:
+                    error_message = "More than one student has that name — please use their email instead, or pick them from the suggestions."
+
+            if not student:
+                flash(error_message or "That student hasn't logged into the site yet. Ask them to sign in once first, or double check the spelling.", "error")
             else:
                 existing = query_db(
                     "SELECT id FROM Candidates WHERE user_id=? AND position_id=?",
@@ -730,7 +763,6 @@ def admin_candidates():
                         "INSERT INTO Candidates (position_id, user_id, bio, photo) VALUES (?, ?, '', '{}')",
                         (request.form.get("position_id"), student["id"])
                     )
-                    
                     flash(f"{student['name']} added as a candidate.", "success")
 
         elif action == "remove":
