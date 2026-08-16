@@ -37,8 +37,14 @@ Manage Candidates
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="action" value="assign">
         <input type="hidden" name="election_id" value="{{ election_id }}">
-        <label>Student's school email (they must have logged in at least once)</label>
-        <input type="email" name="student_email" required>
+
+        <label>Student's name or email (they must have logged in at least once)</label>
+        <div class="autocomplete-wrapper">
+            <input type="text" id="student-search" name="student_query" autocomplete="off" required
+                placeholder="Start typing a name or email…">
+            <div id="student-suggestions" class="autocomplete-dropdown hidden"></div>
+        </div>
+
         <label>Position</label>
 
         <select name="position_id" required>
@@ -105,5 +111,11 @@ Manage Candidates
 </div>
 
 {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="{{ url_for('static', filename='js/admin_candidates.js') }}"></script>
 
 {% endblock %}
