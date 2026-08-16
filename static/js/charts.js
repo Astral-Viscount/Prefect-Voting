@@ -7,10 +7,10 @@ const PALETTE = [
     "#8fd6c4"
 ];
 
-const chartState = {};
-let modalChart = null;
+const chart_state = {};
+let modal_chart = null;
 
-function getColor(i) {
+function get_color(i) {
     if (i < PALETTE.length) {
         return PALETTE[i];
     }
@@ -18,8 +18,8 @@ function getColor(i) {
     return `hsl(${hue}, 55%, 42%)`;
 }
 
-async function fetchResults(positionId, apiBase = "/admin/api/results") {
-    const res = await fetch(`${apiBase}/${positionId}`);
+async function fetch_results(position_id, api_base = "/admin/api/results") {
+    const res = await fetch(`${api_base}/${position_id}`);
 
     if (!res.ok) {
         throw new Error("Failed to load results");
@@ -28,7 +28,7 @@ async function fetchResults(positionId, apiBase = "/admin/api/results") {
     return res.json();
 }
 
-function buildChartConfig(type, data) {
+function build_chart_config(type, data) {
     return {
         type: type,
         data: {
@@ -37,7 +37,7 @@ function buildChartConfig(type, data) {
             datasets: [{
                 label: "Votes",
                 data: data.candidates.map(c => c.votes),
-                backgroundColor: data.candidates.map((_, i) => getColor(i)),
+                backgroundColor: data.candidates.map((_, i) => get_color(i)),
                 borderWidth: 1
             }]
         },
@@ -58,118 +58,118 @@ function buildChartConfig(type, data) {
     };
 }
 
-function createChart(positionId, type, data) {
-    const canvas = document.getElementById(`chart-${positionId}`);
+function create_chart(position_id, type, data) {
+    const canvas = document.getElementById(`chart${position_id}`);
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
 
-    if (chartState[positionId]?.chart) {
-        chartState[positionId].chart.destroy();
+    if (chart_state[position_id]?.chart) {
+        chart_state[position_id].chart.destroy();
     }
 
-    chartState[positionId].chart = new Chart(ctx, buildChartConfig(type, data));
+    chart_state[position_id].chart = new Chart(ctx, build_chart_config(type, data));
 }
 
-function renderChart(positionId) {
-    const state = chartState[positionId];
+function render_chart(position_id) {
+    const state = chart_state[position_id];
 
-    fetchResults(positionId, state.apiBase)
+    fetch_results(position_id, state.api_base)
         .then(data => {
-            state.lastData = data;
+            state.last_data = data;
 
-            createChart(positionId, state.type, data);
+            create_chart(position_id, state.type, data);
 
-            const totalEl = document.getElementById(`total-${positionId}`);
-            if (totalEl) {
-                totalEl.textContent = `Total votes: ${data.total_votes}`;
+            const total_el = document.getElementById(`total${position_id}`);
+            if (total_el) {
+                total_el.textContent = `Total votes: ${data.total_votes}`;
             }
 
-            if (modalChart && state.modalOpen) {
-                modalChart.destroy();
-                modalChart = new Chart(
-                    document.getElementById("modalChartCanvas").getContext("2d"),
-                    buildChartConfig(state.type, data)
+            if (modal_chart && state.modal_open) {
+                modal_chart.destroy();
+                modal_chart = new Chart(
+                    document.getElementById("modal-chart-canvas").getContext("2d"),
+                    build_chart_config(state.type, data)
                 );
 
-                const modalTotal = document.getElementById("modalChartTotal");
-                if (modalTotal) {
-                    modalTotal.textContent = `Total votes: ${data.total_votes}`;
+                const modal_total = document.getElementById("modal-chart-total");
+                if (modal_total) {
+                    modal_total.textContent = `Total votes: ${data.total_votes}`;
                 }
             }
         })
         .catch(err => console.error(err));
 }
 
-function initLiveChart(positionId, defaultType = "bar", options = {}) {
-    const { apiBase = "/admin/api/results", live = true, pollMs = 5000 } = options;
+function init_live_chart(position_id, default_type = "bar", options = {}) {
+    const { api_base = "/admin/api/results", live = true, poll_ms = 5000 } = options;
 
-    chartState[positionId] = {
-        type: defaultType,
+    chart_state[position_id] = {
+        type: default_type,
         chart: null,
-        apiBase: apiBase,
-        lastData: null,
-        modalOpen: false
+        api_base: api_base,
+        last_data: null,
+        modal_open: false
     };
 
-    renderChart(positionId);
+    render_chart(position_id);
 
     if (live) {
-        chartState[positionId].timer = setInterval(() => renderChart(positionId), pollMs);
+        chart_state[position_id].timer = setInterval(() => render_chart(position_id), poll_ms);
     }
 
-    const wrapper = document.querySelector(`.chart-wrapper[data-position-id="${positionId}"]`);
+    const wrapper = document.querySelector(`.chart-wrapper[data-position-id="${position_id}"]`);
 
     if (wrapper) {
         wrapper.classList.add("clickable");
-        wrapper.addEventListener("click", () => openChartModal(positionId));
+        wrapper.addEventListener("click", () => open_chart_modal(position_id));
     }
 }
 
-function setChartType(positionId, type) {
-    chartState[positionId].type = type;
-    renderChart(positionId);
+function set_chart_type(position_id, type) {
+    chart_state[position_id].type = type;
+    render_chart(position_id);
 }
 
-function openChartModal(positionId) {
-    const state = chartState[positionId];
-    const modal = document.getElementById("chartModal");
+function open_chart_modal(position_id) {
+    const state = chart_state[position_id];
+    const modal = document.getElementById("chart-modal");
 
-    if (!state || !state.lastData || !modal) return;
+    if (!state || !state.last_data || !modal) return;
 
-    Object.values(chartState).forEach(s => s.modalOpen = false);
-    state.modalOpen = true;
+    Object.values(chart_state).forEach(s => s.modal_open = false);
+    state.modal_open = true;
 
     modal.classList.remove("hidden");
 
-    if (modalChart) {
-        modalChart.destroy();
+    if (modal_chart) {
+        modal_chart.destroy();
     }
 
-    modalChart = new Chart(
-        document.getElementById("modalChartCanvas").getContext("2d"),
-        buildChartConfig(state.type, state.lastData)
+    modal_chart = new Chart(
+        document.getElementById("modal-chart-canvas").getContext("2d"),
+        build_chart_config(state.type, state.last_data)
     );
 
-    const modalTotal = document.getElementById("modalChartTotal");
-    if (modalTotal) {
-        modalTotal.textContent = `Total votes: ${state.lastData.total_votes}`;
+    const modal_total = document.getElementById("modal-chart-total");
+    if (modal_total) {
+        modal_total.textContent = `Total votes: ${state.last_data.total_votes}`;
     }
 }
 
-function closeChartModal() {
-    const modal = document.getElementById("chartModal");
+function close_chart_modal() {
+    const modal = document.getElementById("chart-modal");
     if (modal) modal.classList.add("hidden");
 
-    Object.values(chartState).forEach(s => s.modalOpen = false);
+    Object.values(chart_state).forEach(s => s.modal_open = false);
 
-    if (modalChart) {
-        modalChart.destroy();
-        modalChart = null;
+    if (modal_chart) {
+        modal_chart.destroy();
+        modal_chart = null;
     }
 }
 
-function renderTurnout() {
+function render_turnout() {
     fetch("/admin/api/turnout")
     .then(r => r.json())
     
@@ -184,5 +184,5 @@ function renderTurnout() {
         if (label) label.textContent = `${data.voted} / ${data.eligible} logged-in accounts have voted (${pct}%)`;
     });
 
-    setTimeout(renderTurnout, 5000);
+    setTimeout(render_turnout, 5000);
 }

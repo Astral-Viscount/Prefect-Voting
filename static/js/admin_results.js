@@ -1,9 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    renderTurnout();
+    render_turnout();
 
     (window.POSITION_IDS || []).forEach(id => {
-        initLiveChart(id);
+        init_live_chart(id);
     });
 
 });

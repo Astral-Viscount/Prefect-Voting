@@ -1,17 +1,19 @@
-let mediaRecorder, chunks = [], recording = false;
-const recordBtn = document.getElementById('recordBtn');
+let media_recorder, media_stream, chunks = [], recording = false;
+const record_btn = document.getElementById('record-btn');
 
-recordBtn.addEventListener('click', async () => {
+record_btn.addEventListener('click', async () => {
     if (!recording) {
         // asks the browser for microphone access
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
+        media_stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        media_recorder = new MediaRecorder(media_stream);
         chunks = [];
 
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        media_recorder.ondataavailable = (e) => chunks.push(e.data);
 
         // combine all chunks into one audio file
-        mediaRecorder.onstop = () => {
+        media_recorder.onstop = () => {
+            media_stream.getTracks().forEach(track => track.stop());
+
             const blob = new Blob(chunks, { type: 'audio/webm' });
             const preview = document.getElementById('preview');
             preview.src = URL.createObjectURL(blob);
@@ -19,17 +21,17 @@ recordBtn.addEventListener('click', async () => {
 
             const dt = new DataTransfer();
             dt.items.add(new File([blob], "voice.webm", { type: "audio/webm" }));
-            document.getElementById('voiceFileInput').files = dt.files;
+            document.getElementById('voice-file-input').files = dt.files;
         };
 
-        mediaRecorder.start();
+        media_recorder.start();
         recording = true;
-        recordBtn.textContent = "Stop recording";
+        record_btn.textContent = "Stop recording";
         
     } 
     else {
-        mediaRecorder.stop();
+        media_recorder.stop();
         recording = false;
-        recordBtn.textContent = "Record a voice introduction";
+        record_btn.textContent = "Record a voice introduction";
     }
 });

@@ -27,9 +27,9 @@
         </a>
 
         {% if session.get('user_id') %}
-        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
 
-        <nav class="site-nav" id="siteNav">
+        <nav class="site-nav" id="site-nav">
             <a href="/dashboard">Dashboard</a>
 
             {% if not session.get('is_admin') %}

@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
     (window.POSITION_IDS || []).forEach(id => {
-        initLiveChart(id, "bar", { apiBase: "/candidate/api/results", live: false });
+        init_live_chart(id, "bar", { api_base: "/candidate/api/results", live: false });
     });
 });

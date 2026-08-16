@@ -381,7 +381,7 @@ html, body {
     padding: 16px;
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.15s ease, transform 0.1s ease, filter 0.12 ease;
+    transition: border-color 0.15s ease, transform 0.1s ease, filter 0.12s ease;
 }
 
 .admin-tool-card:hover {

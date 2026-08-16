@@ -10,6 +10,7 @@ import secrets as secrets_lib
 from pathlib import Path
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from google.auth.exceptions import GoogleAuthError
 
 # replaces any old env variable with the new one
 load_dotenv(override=True)
@@ -505,7 +506,7 @@ def candidate_profile():
         voice_file = request.files.get("voice_file")
 
         if voice_file and voice_file.filename:
-            ext = voice_file.filename.rsplit(".", 1)[-1].lower()
+            ext = Path(voice_file.filename).suffix.lower().lstrip('.')
 
             if ext in ALLOWED_AUDIO_EXT:
                 filename = secure_filename(f"candidate_{candidate_row['id']}_voice.{ext}")
@@ -611,7 +612,6 @@ def admin_elections():
         elif action == "toggle_active":
             election_id = request.form.get("election_id")
             election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
-            curr_election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
 
             if not election:
                 flash("Election not found.", "error")
@@ -619,7 +619,7 @@ def admin_elections():
                 end = parse_date(election["end_date"])
 
                 if end and datetime.now() > end:
-                    flash(f"Can't activate '{curr_election['title']}' — its end time has already passed. Please Create a new one or edit it's end time", "error")
+                    flash(f"Can't activate '{election['title']}' — its end time has already passed. Please Create a new one or edit it's end time", "error")
                 else:
                     execute_db("UPDATE Election SET is_active = 0")
                     execute_db("UPDATE Election SET is_active = 1 WHERE id = ?", (election_id,))
@@ -629,18 +629,18 @@ def admin_elections():
 
         elif action == "deactivate":
             election_id = request.form.get("election_id")
-            curr_election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+            election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
 
             execute_db("UPDATE Election SET is_active = 0 WHERE id = ?", (election_id,))
 
-            if curr_election:
-                flash(f"'{curr_election['title']}' closed.", "info")
+            if election:
+                flash(f"'{election['title']}' closed.", "info")
             else:
                 flash("Election closed.", "info")
 
         elif action == "update_dates":
             election_id = request.form.get("election_id")
-            curr_election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+            election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
 
             execute_db("""
                 UPDATE Election SET title=?, description=?, start_date=?, end_date=?
@@ -653,8 +653,8 @@ def admin_elections():
                 request.form.get("election_id"),
             ))
 
-            if curr_election:
-                flash(f"'{curr_election['title']}' updated.", "info")
+            if election:
+                flash(f"'{election['title']}' updated.", "info")
             else:
                 flash("Election updated.", "info")
 

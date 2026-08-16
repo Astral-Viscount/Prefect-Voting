@@ -82,7 +82,7 @@ Manage Elections
             </td>
         </tr>
 
-        <tr id="edit-row-{{ election.id }}" class="edit-election-row hidden">
+        <tr id="edit-row{{ election.id }}" class="edit-election-row hidden">
             <td colspan="4">
                 <form method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

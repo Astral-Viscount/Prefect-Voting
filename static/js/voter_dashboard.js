@@ -1,99 +1,99 @@
-const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-const positionsData = window.POSITIONS_DATA;
+const csrf_token = document.querySelector('meta[name="csrf-token"]').content;
+const positions_data = window.POSITIONS_DATA;
 
 document.querySelectorAll('.vote-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        const positionId = Number(btn.dataset.positionId);
-        const candidateId = Number(btn.dataset.candidateId);
-        const candidateName = btn.dataset.candidateName;
+        const position_id = Number(btn.dataset.positionId);
+        const candidate_id = Number(btn.dataset.candidateId);
+        const candidate_name = btn.dataset.candidateName;
 
-        voteFor(positionId, candidateId, candidateName);
+        vote_for(position_id, candidate_id, candidate_name);
     });
 });
 
 document.querySelectorAll('.btn.outline').forEach(btn => {
     btn.addEventListener('click', () => {
-        const positionId = Number(btn.dataset.positionId);
-        const candidateId = Number(btn.dataset.candidateId);
+        const position_id = Number(btn.dataset.positionId);
+        const candidate_id = Number(btn.dataset.candidateId);
         
-        showCandidateDetail(candidateId, positionId);
+        show_candidate_detail(candidate_id, position_id);
     });
 });
 
-document.getElementById('candidateModal')
+document.getElementById('candidate-modal')
     .addEventListener('click', (event) => {
-        if (event.target.id === 'candidateModal') {
-            closeCandidateModal();
+        if (event.target.id === 'candidate-modal') {
+            close_candidate_modal();
         }
 });
 
-function findCandidate(positionId, candidateId) {
-    const entry = positionsData.find(p => p.position.id === positionId);
-    return entry.candidates.find(c => c.id === candidateId);
+function find_candidate(position_id, candidate_id) {
+    const entry = positions_data.find(p => p.position.id === position_id);
+    return entry.candidates.find(c => c.id === candidate_id);
 }
 
-function showCandidateDetail(candidateId, positionId) {
-    const c = findCandidate(positionId, candidateId);
+function show_candidate_detail(candidate_id, position_id) {
+    const c = find_candidate(position_id, candidate_id);
 
-    let mediaHtml = "";
+    let media_html = "";
 
     if (c.media.photo) {
-        mediaHtml += `<img src="${c.media.photo}" class="candidate-photo-large">`;
+        media_html += `<img src="${c.media.photo}" class="candidate-photo-large">`;
     }
 
     if (c.media.voice) {
-        mediaHtml += `<audio controls src="${c.media.voice}"></audio>`;
+        media_html += `<audio controls src="${c.media.voice}"></audio>`;
     }
 
     if (c.media.video_url) {
-        mediaHtml += `
+        media_html += `
             <a href="${c.media.video_url}" target="_blank" rel="noopener">
                 Watch introduction video
             </a>
         `;
     }
 
-    document.getElementById('candidateModalContent').innerHTML = `
+    document.getElementById('candidate-modal-content').innerHTML = `
         <h3>${c.name}</h3>
-        ${mediaHtml}
+        ${media_html}
         <p>${c.bio ? c.bio.replace(/</g, "&lt;") : "No bio provided yet."}</p>
     `;
 
-    document.getElementById('candidateModal').classList.remove('hidden');
+    document.getElementById('candidate-modal').classList.remove('hidden');
 }
 
-function closeCandidateModal() {
-    document.getElementById('candidateModal').classList.add('hidden');
+function close_candidate_modal() {
+    document.getElementById('candidate-modal').classList.add('hidden');
 }
 
-async function voteFor(positionId, candidateId, candidateName) {
-    const confirmed = await showConfirmToast(
-        `Confirm your vote for ${candidateName}? This cannot be changed afterwards.`
+async function vote_for(position_id, candidate_id, candidate_name) {
+    const confirmed = await show_confirm_toast(
+        `Confirm your vote for ${candidate_name}? This cannot be changed afterwards.`
     );
     if (!confirmed) return;
 
     try {
-        const res = await fetch(`/vote/${positionId}/${candidateId}`, {
+        const res = await fetch(`/vote/${position_id}/${candidate_id}`, {
             method: "POST",
-            headers: { "X-CSRFToken": csrfToken }
+            headers: { "X-CSRFToken": csrf_token }
         });
 
         let data = null;
         try { data = await res.json(); } catch {}
 
         if (res.ok && data?.success) {
-            showToast("Vote recorded. Thank you!", "success");
+            show_toast("Vote recorded. Thank you!", "success");
             setTimeout(() => window.location.reload(), 1200);
         } 
         else if (res.status === 403) {
-            showToast("Your session may have expired. Please refresh the page and try again.", "error");
+            show_toast("Your session may have expired. Please refresh the page and try again.", "error");
         } 
         else {
-            showToast(data?.error || "Something went wrong. Please refresh and try again.", "error");
+            show_toast(data?.error || "Something went wrong. Please refresh and try again.", "error");
         }
     } 
     catch (err) {
         console.error("Vote request failed:", err);
-        showToast("Network error — please check your connection and try again.", "error");
+        show_toast("Network error — please check your connection and try again.", "error");
     }
 }

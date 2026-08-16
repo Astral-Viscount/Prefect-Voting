@@ -1,4 +1,4 @@
-function handleCredentialResponse(response) {
+function handle_credential_response(response) {
     fetch("/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -9,16 +9,16 @@ function handleCredentialResponse(response) {
         const data = await res.json();
 
         if (res.ok && data.success) {
-            showToast("Signed in! Redirecting…", "success", 1200);
+            show_toast("Signed in! Redirecting…", "success", 1200);
             setTimeout(() => window.location = "/dashboard", 600);
         } 
         else {
-            showToast(data.error || "Login failed. Please try again.", "error");
+            show_toast(data.error || "Login failed. Please try again.", "error");
             console.log(data);
         }
     })
     .catch(err => {
         console.error("Network error:", err);
-        showToast("Server error. Please try again.", "error");
+        show_toast("Server error. Please try again.", "error");
     });
 }
