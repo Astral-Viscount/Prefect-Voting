@@ -603,17 +603,27 @@ def admin_elections():
         action = request.form.get("action")
 
         if action == "create":
-            execute_db("""
-                INSERT INTO Election (title, description, start_date, end_date, is_active)
-                VALUES (?, ?, ?, ?, 0)
-            """, (
-                request.form.get("title", "").strip(),
-                request.form.get("description", "").strip(),
-                request.form.get("start_date") or None,
-                request.form.get("end_date") or None,
-            ))
+            title = request.form.get("title", "").strip()
+            description = request.form.get("description", "").strip()
+            start_date = request.form.get("start_date") or None
+            end_date = request.form.get("end_date") or None
 
-            flash("Election created.", "success")
+            start_dt = parse_date(start_date)
+            end_dt = parse_date(end_date)
+
+            if end_dt and end_dt <= datetime.now():
+                flash("End date/time must be in the future.", "error")
+            elif start_dt and end_dt and end_dt <= start_dt:
+                flash("End date/time must be after the start date/time.", "error")
+            else:
+                execute_db("""
+                    INSERT INTO Election (title, description, start_date, end_date, is_active)
+                    VALUES (?, ?, ?, ?, 0)
+                """, (title, description, start_date, end_date))
+
+                flash("Election created.", "success")
+
+            return redirect("/admin/elections")
 
         elif action == "toggle_active":
             election_id = request.form.get("election_id")
@@ -648,23 +658,30 @@ def admin_elections():
             election_id = request.form.get("election_id")
             election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
 
-            execute_db("""
-                UPDATE Election SET title=?, description=?, start_date=?, end_date=?
-                WHERE id=?
-            """, (
-                request.form.get("title", "").strip(),
-                request.form.get("description", "").strip(),
-                request.form.get("start_date") or None,
-                request.form.get("end_date") or None,
-                request.form.get("election_id"),
-            ))
+            title = request.form.get("title", "").strip()
+            description = request.form.get("description", "").strip()
+            start_date = request.form.get("start_date") or None
+            end_date = request.form.get("end_date") or None
 
-            if election:
-                flash(f"'{election['title']}' updated.", "info")
+            start_dt = parse_date(start_date)
+            end_dt = parse_date(end_date)
+
+            if end_dt and end_dt <= datetime.now():
+                flash("End date/time must be in the future.", "error")
+            elif start_dt and end_dt and end_dt <= start_dt:
+                flash("End date/time must be after the start date/time.", "error")
             else:
-                flash("Election updated.", "info")
+                execute_db("""
+                    UPDATE Election SET title=?, description=?, start_date=?, end_date=?
+                    WHERE id=?
+                """, (title, description, start_date, end_date, election_id))
 
-        return redirect("/admin/elections")
+                if election:
+                    flash(f"'{election['title']}' updated.", "info")
+                else:
+                    flash("Election updated.", "info")
+
+            return redirect("/admin/elections")
 
     elections = query_db("SELECT * FROM Election ORDER BY id DESC")
 
