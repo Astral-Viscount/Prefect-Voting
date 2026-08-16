@@ -533,6 +533,7 @@ def candidate_profile():
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
+    user = get_current_user()
     election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
 
     stats = {
@@ -556,7 +557,7 @@ def admin_dashboard():
             WHERE Positions.election_id=?
         """, (election["id"],), one=True)["c"]
 
-    return render_template("admin_dashboard.html", election=election, stats=stats)
+    return render_template("admin_dashboard.html", user=user, election=election, stats=stats)
 
 @app.errorhandler(404)
 def not_found(error):
