@@ -129,6 +129,8 @@ html, body {
     max-width: 1080px;
     margin: 0 auto;
     padding: 20px 24px 60px;
+    flex: 1 0 auto;
+    width: 100%;
 }
 
 .main-card, .card {
@@ -261,13 +263,6 @@ html, body {
 .error-page h1 {
     font-size: 72px;
     margin: 0;
-}
-
-.site-footer {
-    text-align: center;
-    color: #6f7f79;
-    font-size: 13px;
-    padding: 20px;
 }
 
 .candidate-grid {
@@ -524,6 +519,9 @@ html, body {
     color: #d7e6e1;
     margin-top: 60px;
     padding: 40px 20px 20px;
+    text-align: center;
+    font-size: 13px;
+    padding: 20px;
 }
 
 .footer-grid {
@@ -554,7 +552,7 @@ html, body {
     text-decoration: none;
     margin-bottom: 6px;
     font-size: 14px;
-    overflow-wrap: anywhere;
+    overflow-wrap: nowrap;
 }
 
 .footer-bottom p {
@@ -611,9 +609,11 @@ html, body {
 
 .footer-social {
     display: flex;
-    gap: 14px;
-    margin-top: 6px;
+    gap: 2px;
+    margin-top: 2px;
     justify-content: center;
+    flex-direction: column;
+    align-items: left;
 }
 
 .footer-bottom {
@@ -937,33 +937,11 @@ label {
     }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
     .footer-grid {
         grid-template-columns: 2fr 1fr 1fr 1.3fr;
     }
 
-    .footer-col {
-        text-align: left;
-    }
-
-    .footer-brand {
-        align-items: flex-start;
-    }
-
-    .footer-brand > a {
-        text-align: left;
-    }
-
-    .footer-social {
-        justify-content: flex-start;
-    }
-
-    .footer-bottom {
-        text-align: left;
-    }
-}
-
-@media (min-width: 1024px) {
     .admin-tool-grid {
         grid-template-columns: repeat(3, 1fr);
     }
