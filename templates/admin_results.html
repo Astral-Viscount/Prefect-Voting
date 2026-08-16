@@ -6,7 +6,7 @@ Live Results
 
 {% block content %}
 
-<p class="admin-breadcrumb"><a href="/admin">Back to Admin Dashboard</a></p>
+<p class="admin-breadcrumb"><a href="{{ url_for('admin_dashboard') }}">Back to Admin Dashboard</a></p>
 
 <div class="card">
     <h2>Turnout</h2>
@@ -62,6 +62,8 @@ Live Results
 
 <script>
     window.POSITION_IDS = {{ positions | map(attribute='id') | list | tojson }};
+    window.API_RESULTS_BASE = "{{ url_for('api_results', position_id=0) }}".replace(/0$/, '');
+    window.TURNOUT_URL = "{{ url_for('api_turnout') }}";
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

@@ -22,7 +22,7 @@ My Results
         <tr>
             <td>{{ election.title }}</td>
             <td>{{ election.end_date|datetime }}</td>
-            <td><a href="/candidate/results/{{ election.id }}" class="btn glacier small">View Results</a></td>
+            <td><a href="{{ url_for('candidate_results', election_id=election.id) }}" class="btn glacier small">View Results</a></td>
         </tr>
         {% endfor %}
 

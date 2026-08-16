@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, redirect, request, jsonify, g, abort, flash
+from flask import Flask, render_template, session, redirect, request, jsonify, g, abort, flash, url_for
 import sqlite3
 import os
 from dotenv import load_dotenv
@@ -154,12 +154,12 @@ def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         if "user_id" not in session:
-            return redirect("/login")
+            return redirect(url_for("login_page"))
         
         user = get_current_user()
         if user is None:
             session.clear()
-            return redirect("/login")
+            return redirect(url_for("login_page"))
 
         return view(*args, **kwargs)
 
@@ -169,12 +169,12 @@ def candidate_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         if "user_id" not in session:
-            return redirect("/login")
+            return redirect(url_for("login_page"))
 
         user = get_current_user()
         if user is None:
             session.clear()
-            return redirect("/login")
+            return redirect(url_for("login_page"))
 
         if not is_candidate(user["id"]):
             return render_template("403.html"), 403
@@ -187,12 +187,12 @@ def admin_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         if "user_id" not in session:
-            return redirect("/login")
+            return redirect(url_for("login_page"))
 
         user = get_current_user()
         if user is None:
             session.clear()
-            return redirect("/login")
+            return redirect(url_for("login_page"))
 
         if not user["is_admin"]:
             return render_template("403.html"), 403
@@ -237,7 +237,7 @@ def update_expired_elections():
 @app.before_request
 def csrf_protect():
     if request.method == "POST":
-        if request.path == "/login":
+        if request.path == url_for("login_data"):
             return
 
         token = session.get("csrf_token")
@@ -340,7 +340,7 @@ def login_data():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/")
+    return redirect(url_for("home"))
 
 @app.route("/dashboard")
 @login_required
@@ -348,11 +348,11 @@ def dashboard():
     user = get_current_user()
     
     if user["is_admin"]:
-        return redirect("/admin")
+        return redirect(url_for("admin_dashboard"))
     if is_candidate(user["id"]):
-        return redirect("/candidate")
+        return redirect(url_for("candidate_dashboard"))
     
-    return redirect("/voter")
+    return redirect(url_for("voter_dashboard"))
 
 @app.route("/voter")
 @login_required
@@ -504,7 +504,7 @@ def candidate_profile():
 
                 photo_file.save(full_path)
 
-                media["photo"] = f"/static/uploads/candidates/{filename}"
+                media["photo"] = url_for("static", filename=f"uploads/candidates/{filename}")
             else:
                 flash("Photo must be PNG, JPG or WEBP.", "error")
 
@@ -517,7 +517,7 @@ def candidate_profile():
                 filename = secure_filename(f"candidate_{candidate_row['id']}_voice.{ext}")
                 voice_file.save(os.path.join(UPLOAD_FOLDER, filename))
 
-                media["voice"] = f"/static/uploads/candidates/{filename}"
+                media["voice"] = url_for("static", filename=f"uploads/candidates/{filename}")
             else:
                 flash("Voice clip must be webm, mp3, wav or ogg.", "error")
 
@@ -526,7 +526,7 @@ def candidate_profile():
 
         flash("Profile updated.", "success")
 
-        return redirect("/candidate")
+        return redirect(url_for("candidate_dashboard"))
 
     return render_template("candidate_profile.html", candidate=candidate_row, media=media)
 
@@ -623,7 +623,7 @@ def admin_elections():
 
                 flash("Election created.", "success")
 
-            return redirect("/admin/elections")
+            return redirect(url_for("admin_elections"))
 
         elif action == "toggle_active":
             election_id = request.form.get("election_id")
@@ -641,7 +641,7 @@ def admin_elections():
                     execute_db("UPDATE Election SET is_active = 1 WHERE id = ?", (election_id,))
                     flash(f"'{election['title']}' activated. All other elections were deactivated.", "success")
 
-            return redirect("/admin/elections")
+            return redirect(url_for("admin_elections"))
 
         elif action == "deactivate":
             election_id = request.form.get("election_id")
@@ -681,7 +681,7 @@ def admin_elections():
                 else:
                     flash("Election updated.", "info")
 
-            return redirect("/admin/elections")
+            return redirect(url_for("admin_elections"))
 
     elections = query_db("SELECT * FROM Election ORDER BY id DESC")
 
@@ -710,7 +710,7 @@ def admin_positions():
 
             flash("Position removed.", "info")
 
-        return redirect(f"/admin/positions?election_id={election_id}")
+        return redirect(url_for("admin_positions", election_id=election_id))
 
     elections = query_db("SELECT * FROM Election ORDER BY id DESC")
 
@@ -788,7 +788,7 @@ def admin_candidates():
 
             flash("Candidate removed.", "info")
 
-        return redirect(f"/admin/candidates?election_id={election_id}")
+        return redirect(url_for("admin_candidates", election_id=election_id))
 
     elections = query_db("SELECT * FROM Election ORDER BY id DESC")
 
@@ -1082,7 +1082,7 @@ def manage_admins():
             execute_db("UPDATE Users SET is_admin=0 WHERE id=?", (target_id,))
             flash("User has been demoted from admin.", "info")
 
-        return redirect("/admin/manage-admins")
+        return redirect(url_for("manage_admins"))
 
     search = request.args.get("q", "").strip()
 
@@ -1120,7 +1120,7 @@ def admin_announcements():
             log_admin_action("deactivate_announcement", f"id={announcement_id}")
             flash("Announcement removed.", "info")
 
-        return redirect("/admin/announcements")
+        return redirect(url_for("admin_announcements"))
 
     announcements = query_db("SELECT * FROM Announcements ORDER BY id DESC LIMIT 50")
 

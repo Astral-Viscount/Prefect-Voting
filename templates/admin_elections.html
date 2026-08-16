@@ -75,7 +75,7 @@ Manage Elections
                         {% endif %}
 
                     </form>
-                    <a href="/admin/positions?election_id={{ election.id }}" class="btn outline small">Positions</a>
+                    <a href="{{ url_for('admin_positions', election_id=election.id) }}" class="btn outline small">Positions</a>
                     <button type="button" class="btn outline small edit-election-btn" data-election-id="{{ election.id }}">Edit</button>
                 
                 </div>

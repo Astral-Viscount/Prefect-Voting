@@ -28,7 +28,7 @@ Admin Dashboard
         </p>
 
     {% else %}
-        <p>No election has been created yet. <a href="/admin/elections">Create one to get started</a></p>
+        <p>No election has been created yet. <a href="{{ url_for('admin_elections') }}">Create one to get started</a></p>
 
     {% endif %}
 </div>
@@ -60,42 +60,42 @@ Admin Dashboard
     <h3>Admin Tools</h3>
 
     <div class="admin-tool-grid">
-        <a href="/admin/elections" class="admin-tool-card">
+        <a href="{{ url_for('admin_elections') }}" class="admin-tool-card">
             <h4>Elections</h4>
             <p>Create elections, set voting windows, activate or close voting</p>
         </a>
 
-        <a href="/admin/positions" class="admin-tool-card">
+        <a href="{{ url_for('admin_positions') }}" class="admin-tool-card">
             <h4>Positions</h4>
             <p>Add or remove the roles being voted on</p>
         </a>
 
-        <a href="/admin/candidates" class="admin-tool-card">
+        <a href="{{ url_for('admin_candidates') }}" class="admin-tool-card">
             <h4>Candidates</h4>
             <p>Assign students as candidates for each position</p>
         </a>
 
-        <a href="/admin/results" class="admin-tool-card">
+        <a href="{{ url_for('admin_results') }}" class="admin-tool-card">
             <h4>Live Results</h4>
             <p>Live-updating charts and turnout for the current election</p>
         </a>
 
-        <a href="/admin/voters" class="admin-tool-card">
+        <a href="{{ url_for('admin_voters') }}" class="admin-tool-card">
             <h4>Voters (Students who has voted)</h4>
             <p>See who has participated in the election</p>
         </a>
 
-        <a href="/admin/manage-admins" class="admin-tool-card">
+        <a href="{{ url_for('manage_admins') }}" class="admin-tool-card">
             <h4>Manage Admins</h4>
             <p>Promote or demote other admins</p>
         </a>
 
-        <a href="/admin/announcements" class="admin-tool-card">
+        <a href="{{ url_for('admin_announcements') }}" class="admin-tool-card">
             <h4>Announcements</h4>
             <p>Post a site-wide banner announcement</p>
         </a>
 
-        <a href="/admin/audit-log" class="admin-tool-card">
+        <a href="{{ url_for('admin_audit_log') }}" class="admin-tool-card">
             <h4>Audit Log</h4>
             <p>See what admins have changed</p>
         </a>

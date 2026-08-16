@@ -5,13 +5,13 @@ Manage Candidates
 {% endblock %}
 
 {% block content %}
-<p class="admin-breadcrumb"><a href="/admin">Back to Admin Dashboard</a></p>
+<p class="admin-breadcrumb"><a href="{{ url_for('admin_dashboard') }}">Back to Admin Dashboard</a></p>
 
 <div class="card">
     <h2>Manage Candidates</h2>
 
     <label for="election-select">Election</label>
-    <select id="election-select" onchange="window.location.href='/admin/candidates?election_id=' + this.value">
+    <select id="election-select" onchange="window.location.href='{{ url_for('admin_candidates') }}?election_id=' + this.value">
         <option value="">Select an election</option>
         {% for e in elections %}
         <option value="{{ e.id }}" 
@@ -30,7 +30,7 @@ Manage Candidates
     <h3>Assign a Candidate</h3>
 
     {% if not positions %}
-        <p>This election has no positions yet. <a href="/admin/positions?election_id={{ election_id }}">Add one first</a></p>
+        <p>This election has no positions yet. <a href="{{ url_for('admin_positions', election_id=election_id) }}">Add one first</a></p>
 
     {% else %}
     <form method="POST">
@@ -101,7 +101,7 @@ Manage Candidates
     <p>No candidates assigned yet.</p>
     {% endif %}
 
-    <a href="/admin/positions?election_id={{ election_id }}" class="btn outline small">Back to Positions</a>
+    <a href="{{ url_for('admin_positions', election_id=election_id) }}" class="btn outline small">Back to Positions</a>
 
 </div>
 
@@ -115,6 +115,10 @@ Manage Candidates
 {% endblock %}
 
 {% block scripts %}
+
+<script>
+    window.USER_SEARCH_URL = "{{ url_for('api_users_search') }}";
+</script>
 
 <script src="{{ url_for('static', filename='js/admin_candidates.js') }}"></script>
 

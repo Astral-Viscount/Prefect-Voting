@@ -83,6 +83,7 @@ Voter Dashboard
 
 <script>
     window.POSITIONS_DATA = {{ positions | tojson }};
+    window.VOTE_URL_BASE = "{{ url_for('cast_vote', position_id=0, candidate_id=0) }}";
 </script>
 
 <script src="{{ url_for('static', filename='js/voter_dashboard.js') }}"></script>

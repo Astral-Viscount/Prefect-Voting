@@ -5,14 +5,14 @@ Manage Positions
 {% endblock %}
 
 {% block content %}
-<p class="admin-breadcrumb"><a href="/admin">Back to Admin Dashboard</a></p>
+<p class="admin-breadcrumb"><a href="{{ url_for('admin_dashboard') }}">Back to Admin Dashboard</a></p>
 
 <div class="card">
     <h2>Manage Positions</h2>
 
     <label for="election-select">Election</label>
 
-    <select id="election-select" onchange="window.location.href='/admin/positions?election_id=' + this.value">
+    <select id="election-select" onchange="window.location.href='{{ url_for('admin_positions') }}?election_id=' + this.value">
         <option value="">Select an election</option>
 
         {% for election in elections %}
@@ -84,7 +84,7 @@ Manage Positions
     <p>No positions yet. Add one above.</p>
     {% endif %}
 
-    <a href="/admin/candidates?election_id={{ election_id }}" class="btn outline small">Manage Candidates for this Election</a>
+    <a href="{{ url_for('admin_candidates', election_id=election_id) }}" class="btn outline small">Manage Candidates for this Election</a>
 
 </div>
 

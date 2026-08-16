@@ -18,8 +18,8 @@ function get_color(i) {
     return `hsl(${hue}, 55%, 42%)`;
 }
 
-async function fetch_results(position_id, api_base = "/admin/api/results") {
-    const res = await fetch(`${api_base}/${position_id}`);
+async function fetch_results(position_id, api_base) {
+    const res = await fetch(`${api_base}${position_id}`);
 
     if (!res.ok) {
         throw new Error("Failed to load results");
@@ -102,7 +102,7 @@ function render_chart(position_id) {
 }
 
 function init_live_chart(position_id, default_type = "bar", options = {}) {
-    const { api_base = "/admin/api/results", live = true, poll_ms = 5000 } = options;
+    const { api_base = window.API_RESULTS_BASE, live = true, poll_ms = 5000 } = options;
 
     chart_state[position_id] = {
         type: default_type,
@@ -170,7 +170,7 @@ function close_chart_modal() {
 }
 
 function render_turnout() {
-    fetch("/admin/api/turnout")
+    fetch(window.TURNOUT_URL)
     .then(r => r.json())
     
     .then(data => {

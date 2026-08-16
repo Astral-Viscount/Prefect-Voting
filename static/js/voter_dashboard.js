@@ -65,6 +65,10 @@ function close_candidate_modal() {
     document.getElementById('candidate-modal').classList.add('hidden');
 }
 
+function build_vote_url(position_id, candidate_id) {
+    return window.VOTE_URL_BASE.replace('/0/0', `/${position_id}/${candidate_id}`);
+}
+
 async function vote_for(position_id, candidate_id, candidate_name) {
     const confirmed = await show_confirm_toast(
         `Confirm your vote for ${candidate_name}? This cannot be changed afterwards.`
@@ -72,7 +76,7 @@ async function vote_for(position_id, candidate_id, candidate_name) {
     if (!confirmed) return;
 
     try {
-        const res = await fetch(`/vote/${position_id}/${candidate_id}`, {
+        const res = await fetch(build_vote_url(position_id, candidate_id), {
             method: "POST",
             headers: { "X-CSRFToken": csrf_token }
         });

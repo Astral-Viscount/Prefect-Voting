@@ -9,7 +9,7 @@ Page Not Found
 <div class="error-page">
     <h1>404</h1>
     <p>That page doesn't exist.</p>
-    <a href="/" class="btn glacier">Go home</a>
+    <a href="{{ url_for('home') }}" class="btn glacier">Go home</a>
 </div>
 
 {% endblock %}

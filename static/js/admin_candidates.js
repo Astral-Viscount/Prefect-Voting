@@ -47,7 +47,8 @@
 
     async function fetch_suggestions(q) {
         try {
-            const res = await fetch(`/admin/api/users/search?q=${encodeURIComponent(q)}`);
+            const base = window.USER_SEARCH_URL;
+            const res = await fetch(`${base}?q=${encodeURIComponent(q)}`);
             if (!res.ok) return;
             render_suggestions(await res.json());
         } catch (err) {

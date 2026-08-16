@@ -33,7 +33,7 @@ My Results
         </table>
         </div>
 
-        <a href="/voter/results/{{ election.id }}" class="btn glacier small" style="margin-top:12px;">View Full Results</a>
+        <a href="{{ url_for('voter_results', election_id=election.id) }}" class="btn glacier small" style="margin-top:12px;">View Full Results</a>
 
     </div>
     {% endfor %}
