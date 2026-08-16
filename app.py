@@ -11,6 +11,7 @@ from pathlib import Path
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from google.auth.exceptions import GoogleAuthError
+import re
 
 # replaces any old env variable with the new one
 load_dotenv(override=True)
@@ -57,6 +58,7 @@ ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp"}
 ALLOWED_AUDIO_EXT = {"webm", "mp3", "wav", "ogg"}
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024 # 32 MB
 
+YOUTUBE_URL_RE = re.compile(r'^https?://(www\.)?(youtube\.com/(watch\?v=[\w-]{6,}(&\S*)?|shorts/[\w-]{6,}(\?\S*)?)|youtu\.be/[\w-]{6,}(\?\S*)?)$')
 
 def get_db():
     db = getattr(g, "_database", None)
@@ -483,7 +485,10 @@ def candidate_profile():
         video_url = request.form.get("video_url", "").strip()[:500]
 
         if video_url:
-            media["video_url"] = video_url
+            if YOUTUBE_URL_RE.match(video_url):
+                media["video_url"] = video_url
+            else:
+                flash("Video link must be a YouTube video or YouTube Shorts link.", "error")
 
         photo_file = request.files.get("photo_file")
 

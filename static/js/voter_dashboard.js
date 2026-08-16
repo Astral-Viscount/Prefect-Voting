@@ -33,30 +33,29 @@ function find_candidate(position_id, candidate_id) {
 }
 
 function show_candidate_detail(candidate_id, position_id) {
-    const c = find_candidate(position_id, candidate_id);
+    const candi = find_candidate(position_id, candidate_id);
 
-    let media_html = "";
+    const photo_html = candi.media.photo
+        ? `<img src="${candi.media.photo}" class="candidate-photo-large">`
+        : "";
 
-    if (c.media.photo) {
-        media_html += `<img src="${c.media.photo}" class="candidate-photo-large">`;
-    }
+    const voice_html = candi.media.voice
+        ? `<audio controls src="${candi.media.voice}"></audio>`
+        : "";
 
-    if (c.media.voice) {
-        media_html += `<audio controls src="${c.media.voice}"></audio>`;
-    }
-
-    if (c.media.video_url) {
-        media_html += `
-            <a href="${c.media.video_url}" target="_blank" rel="noopener">
-                Watch introduction video
-            </a>
-        `;
-    }
+    const video_html = candi.media.video_url
+        ? `<a href="${candi.media.video_url}" target="_blank" rel="noopener"
+               class="btn outline small" style="margin-top:12px;display:inline-block;">
+               Watch introduction video
+           </a>`
+        : "";
 
     document.getElementById('candidate-modal-content').innerHTML = `
-        <h3>${c.name}</h3>
-        ${media_html}
-        <p>${c.bio ? c.bio.replace(/</g, "&lt;") : "No bio provided yet."}</p>
+        <h3>${candi.name}</h3>
+        ${photo_html}
+        <p>${candi.bio ? candi.bio.replace(/</g, "&lt;") : "No bio provided yet."}</p>
+        ${voice_html}
+        ${video_html}
     `;
 
     document.getElementById('candidate-modal').classList.remove('hidden');

@@ -43,25 +43,22 @@ Voter Dashboard
                 {% endif %}
 
                 <h4>{{ candidate.name }}</h4>
-                <p class="candidate-bio">{{ candidate.bio[:140] }}
-                    {% if candidate.bio and candidate.bio|length > 140 %}
-                    …
-                    {% endif %}
-                </p>
+                <p class="candidate-bio">{{ candidate.bio or "" }}</p>
 
-                <button type="button" class="btn outline small"
-                        data-position-id="{{ entry.position.id }}"
-                        data-candidate-id="{{ candidate.id }}">
-                    Learn More     
-                </button>
+                <div class="candidate-actions">
+                    <button type="button" class="btn outline small"
+                            data-position-id="{{ entry.position.id }}"
+                            data-candidate-id="{{ candidate.id }}">
+                        Learn More
+                    </button>
 
-                <button type="button" class="btn glacier small vote-btn"
-                        data-position-id="{{ entry.position.id }}"
-                        data-candidate-id="{{ candidate.id }}"
-                        data-candidate-name="{{ candidate.name }}">
-                    Vote
-                </button>
-
+                    <button type="button" class="btn glacier small vote-btn"
+                            data-position-id="{{ entry.position.id }}"
+                            data-candidate-id="{{ candidate.id }}"
+                            data-candidate-name="{{ candidate.name }}">
+                        Vote
+                    </button>
+                </div>
             </div>
         {% endfor %}
 
