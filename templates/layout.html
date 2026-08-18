@@ -36,11 +36,11 @@
 
                 {% if is_candidate_ever %}
                     <a href="{{ url_for('candidate_profile') }}">Edit Profile</a>
-                    <a href="{{ url_for('candidate_results_list') }}">My Candidate Results</a>
+                    <a href="{{ url_for('candidate_results_list') }}">Candidate Results</a>
                 {% endif %}
 
                 {% if not is_candidate_now %}
-                    <a href="{{ url_for('voter_results_list') }}">My Results</a>
+                    <a href="{{ url_for('voter_results_list') }}">Vote Results</a>
                 {% endif %}
             
             {% else %}
