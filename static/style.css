@@ -803,6 +803,37 @@ html, body {
     text-align: right;
 }
 
+.announcement-message {
+    margin: 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.announcement-message.expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+}
+
+.message-toggle {
+    display: none;
+    background: none;
+    border: none;
+    padding: 4px 0 0;
+    margin: 0;
+    color: var(--bhs-glacier-green);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.message-toggle.visible {
+    display: inline-block;
+}
+
 #level-select.information {
     color: var(--bhs-glacier-green);
 }
