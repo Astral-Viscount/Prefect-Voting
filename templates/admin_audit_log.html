@@ -26,7 +26,10 @@ Audit Log
             <td>{{ log.created_at|datetime }}</td>
             <td>{{ log.admin_name or "System (automatic)" }}</td>
             <td>{{ log.action }}</td>
-            <td>{{ log.details }}</td>
+            <td>
+                <p class="announcement-message" id="log{{ log.id }}">{{ log.details }}</p>
+                <button type="button" class="message-toggle" data-target="log{{ log.id }}">Show more</button>
+            </td>
         </tr>
 
         {% endfor %}
@@ -35,4 +38,8 @@ Audit Log
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin_announcements.js') }}"></script>
 {% endblock %}
