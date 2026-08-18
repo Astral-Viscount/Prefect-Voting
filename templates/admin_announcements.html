@@ -44,7 +44,7 @@ Announcements
         <tr>
             <td>
                 <p class="announcement-message" id="msg{{ announcement.id }}">{{ announcement.message }}</p>
-                <button type="button" class="message-toggle" data-target="msg{{ announcement.id }}">Show more</button>
+                <button type="button" class="message-toggle" data-target="msg{{ announcement.id }}">...</button>
             </td>
             <td>{{ announcement.level }}</td>
             <td>{{ announcement.created_at|datetime }}</td>
@@ -75,5 +75,6 @@ Announcements
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/admin_announcements.js') }}"></script>
+<!-- Added ?v=2 to force the browser to grab the latest version -->
+<script src="{{ url_for('static', filename='js/admin_announcements.js') }}?v=2"></script>
 {% endblock %}
