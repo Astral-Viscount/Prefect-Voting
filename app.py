@@ -15,6 +15,7 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 from google.auth.exceptions import GoogleAuthError
 import re
+from zoneinfo import ZoneInfo
 
 # replaces any old env variable with the new one
 load_dotenv(override=True)
@@ -62,10 +63,18 @@ ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp"}
 ALLOWED_AUDIO_EXT = {"webm", "mp3", "wav", "ogg"}
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024  # 32 MB
 
+#youtube filter
 YOUTUBE_URL_RE = re.compile(
     r'^https?://(www\.)?(youtube\.com/(watch\?v=[\w-]{6,}(&\S*)?|'
     r'shorts/[\w-]{6,}(\?\S*)?)|youtu\.be/[\w-]{6,}(\?\S*)?)$'
 )
+
+#nz timezone
+NZ_TIME = ZoneInfo("Pacific/Auckland")
+
+
+def now_nz():
+    return datetime.now(NZ_TIME).replace(tzinfo=None)
 
 
 def get_db():
@@ -273,8 +282,8 @@ def datetime_filter(value):
 
 
 def election_dates_conflict(start_date, end_date, exclude_id=None):
-    start_dt = parse_date(start_date)
-    end_dt = parse_date(end_date)
+    start_dt = parse_date(start_date) or datetime.min
+    end_dt = parse_date(end_date) or datetime.max
 
     other_elections = query_db(
         "SELECT id, title, start_date, end_date FROM Election"
@@ -284,15 +293,11 @@ def election_dates_conflict(start_date, end_date, exclude_id=None):
         if exclude_id and str(other["id"]) == str(exclude_id):
             continue
 
-        other_start = parse_date(other["start_date"])
-        other_end = parse_date(other["end_date"])
+        other_start = parse_date(other["start_date"]) or datetime.min
+        other_end = parse_date(other["end_date"]) or datetime.max
 
-        new_ends_first = (
-            end_dt and other_start and end_dt <= other_start
-        )
-        other_ends_first = (
-            other_end and start_dt and start_dt >= other_end
-        )
+        new_ends_first = end_dt <= other_start
+        other_ends_first = other_end <= start_dt
 
         if not new_ends_first and not other_ends_first:
             return other["title"]
@@ -301,7 +306,7 @@ def election_dates_conflict(start_date, end_date, exclude_id=None):
 
 
 def sync_election_status():
-    now = datetime.now()
+    now = now_nz()
 
     active_elections = query_db(
         "SELECT id, end_date FROM Election WHERE is_active=1"
@@ -795,7 +800,7 @@ def voting_is_open(election):
     if not election or not election["is_active"]:
         return False, "No current election running"
 
-    now = datetime.now()
+    now = now_nz()
     start = parse_date(election["start_date"])
     end = parse_date(election["end_date"])
 
@@ -827,7 +832,7 @@ def admin_elections():
 
             conflict_title = election_dates_conflict(start_date, end_date)
 
-            if end_dt and end_dt <= datetime.now():
+            if end_dt and end_dt <= now_nz():
                 flash("End date/time must be in the future.", "error")
             elif start_dt and end_dt and end_dt <= start_dt:
                 flash(
@@ -866,7 +871,7 @@ def admin_elections():
             else:
                 end = parse_date(election["end_date"])
 
-                if end and datetime.now() > end:
+                if end and now_nz() > end:
                     flash(
                         f"Can't activate '{election['title']}' — its "
                         "end time has already passed. Please Create a "
@@ -892,7 +897,7 @@ def admin_elections():
                 (election_id,), one=True
             )
 
-            now_str = datetime.now().strftime("%Y-%m-%dT%H:%M")
+            now_str = now_nz().strftime("%Y-%m-%dT%H:%M")
 
             execute_db(
                 "UPDATE Election SET is_active = 0, end_date = ? "
@@ -930,7 +935,7 @@ def admin_elections():
                 start_date, end_date, exclude_id=election_id
             )
 
-            if end_dt and end_dt <= datetime.now():
+            if end_dt and end_dt <= now_nz():
                 flash("End date/time must be in the future.", "error")
             elif start_dt and end_dt and end_dt <= start_dt:
                 flash(
