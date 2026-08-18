@@ -228,6 +228,25 @@ def admin_required(view):
     return wrapped
 
 
+def voter_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login_page"))
+
+        user = get_current_user()
+        if user is None:
+            session.clear()
+            return redirect(url_for("login_page"))
+
+        if user["is_admin"] or is_candidate(user["id"]):
+            return render_template("403.html"), 403
+
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
 def parse_date(value):
     if not value:
         return None
@@ -493,6 +512,7 @@ def dashboard():
 
 
 @app.route("/voter")
+@voter_required
 @login_required
 def voter_dashboard():
     user = get_current_user()
@@ -551,6 +571,7 @@ def voter_dashboard():
 
 @app.route("/vote/<int:position_id>/<int:candidate_id>", methods=["POST"])
 @login_required
+@voter_required
 def cast_vote(position_id, candidate_id):
     user = get_current_user()
     election = get_active_election()
@@ -1307,6 +1328,7 @@ def admin_results():
 
 @app.route("/voter/results")
 @login_required
+@voter_required
 def voter_results_list():
     user = get_current_user()
 
@@ -1342,6 +1364,7 @@ def voter_results_list():
 
 @app.route("/voter/results/<int:election_id>")
 @login_required
+@voter_required
 def voter_results(election_id):
     user = get_current_user()
     election = query_db(
@@ -1365,6 +1388,7 @@ def voter_results(election_id):
 
 @app.route("/voter/api/results/<int:position_id>")
 @login_required
+@voter_required
 def voter_api_results(position_id):
     user = get_current_user()
     position = query_db(
