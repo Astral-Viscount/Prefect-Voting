@@ -1,4 +1,7 @@
-from flask import Flask, render_template, session, redirect, request, jsonify, g, abort, flash, url_for
+from flask import (
+    Flask, render_template, session, redirect, request,
+    jsonify, g, abort, flash, url_for
+)
 import sqlite3
 import os
 from dotenv import load_dotenv
@@ -23,13 +26,14 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 if not app.config["SECRET_KEY"]:
     raise RuntimeError(
         "SECRET_KEY is missing"
-        "Please generate a new one by running the secret_token.py file from /utils folder and add it to .env"
+        "Please generate a new one by running the secret_token.py "
+        "file from /utils folder and add it to .env"
     )
 
 # XSS defense
-app.config["SESSION_COOKIE_HTTPONLY"] = True 
+app.config["SESSION_COOKIE_HTTPONLY"] = True
 # CSRF defense
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax" 
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 8
 
 # More efficient as it uses a set comprehension
@@ -40,7 +44,7 @@ ADMIN_EMAILS = {
 }
 
 # SCHOOL_DOMAIN = os.getenv("SCHOOL_DOMAIN", "@burnside.school.nz").lower()
-#for debugging
+# for debugging
 SCHOOL_DOMAINS = {
     school_domain.strip().lower()
     for school_domain in os.getenv("SCHOOL_DOMAIN").split(",")
@@ -56,9 +60,13 @@ UPLOAD_FOLDER = os.path.join("static", "uploads", "candidates")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp"}
 ALLOWED_AUDIO_EXT = {"webm", "mp3", "wav", "ogg"}
-app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024 # 32 MB
+app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024  # 32 MB
 
-YOUTUBE_URL_RE = re.compile(r'^https?://(www\.)?(youtube\.com/(watch\?v=[\w-]{6,}(&\S*)?|shorts/[\w-]{6,}(\?\S*)?)|youtu\.be/[\w-]{6,}(\?\S*)?)$')
+YOUTUBE_URL_RE = re.compile(
+    r'^https?://(www\.)?(youtube\.com/(watch\?v=[\w-]{6,}(&\S*)?|'
+    r'shorts/[\w-]{6,}(\?\S*)?)|youtu\.be/[\w-]{6,}(\?\S*)?)$'
+)
+
 
 def get_db():
     db = getattr(g, "_database", None)
@@ -67,11 +75,13 @@ def get_db():
         db.row_factory = sqlite3.Row
     return db
 
+
 @app.teardown_appcontext
 def close_connection(exception):
     db = getattr(g, "_database", None)
     if db is not None:
         db.close()
+
 
 def query_db(query, args=(), one=False):
     cur = get_db().execute(query, args)
@@ -79,18 +89,20 @@ def query_db(query, args=(), one=False):
     cur.close()
     return (rv[0] if rv else None) if one else rv
 
+
 def execute_db(query, args=()):
     db = get_db()
     db.execute(query, args)
     db.commit()
 
+
 def verify_google_token(token):
 
     try:
         id_info = id_token.verify_oauth2_token(
-        token,
-        requests.Request(),
-        GOOGLE_CLIENT_ID
+            token,
+            requests.Request(),
+            GOOGLE_CLIENT_ID
         )
 
     except ValueError as e:
@@ -117,7 +129,9 @@ def verify_google_token(token):
     email = id_info["email"].lower()
 
     # is_school_account = email.endswith(SCHOOL_DOMAIN)
-    is_school_account = any(email.endswith(domain) for domain in SCHOOL_DOMAINS) #for debugging
+    is_school_account = any(
+        email.endswith(domain) for domain in SCHOOL_DOMAINS
+    )  # for debugging
     is_allowlisted_admin = email in ADMIN_EMAILS
 
     if not (is_school_account or is_allowlisted_admin):
@@ -130,6 +144,7 @@ def verify_google_token(token):
         "should_be_admin": is_allowlisted_admin
     }
 
+
 # Helper functions
 
 # Flask's 'g' object to cache the user for the rest of the session
@@ -138,24 +153,33 @@ def get_current_user():
         return None
 
     if not hasattr(g, "current_user"):
-        g.current_user = query_db("SELECT * FROM Users Where id=?", (session["user_id"],), one=True)
+        g.current_user = query_db(
+            "SELECT * FROM Users Where id=?",
+            (session["user_id"],), one=True
+        )
 
     return g.current_user
 
+
 def is_candidate(user_id):
-    row = query_db("SELECT id FROM Candidates WHERE user_id=?", (user_id,), one=True)
-    
+    row = query_db(
+        "SELECT id FROM Candidates WHERE user_id=?",
+        (user_id,), one=True
+    )
+
     return row is not None
+
 
 def get_active_election():
     return query_db("SELECT * FROM Election WHERE is_active=1", one=True)
+
 
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         if "user_id" not in session:
             return redirect(url_for("login_page"))
-        
+
         user = get_current_user()
         if user is None:
             session.clear()
@@ -164,6 +188,7 @@ def login_required(view):
         return view(*args, **kwargs)
 
     return wrapped
+
 
 def candidate_required(view):
     @wraps(view)
@@ -183,6 +208,7 @@ def candidate_required(view):
 
     return wrapped
 
+
 def admin_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -201,6 +227,7 @@ def admin_required(view):
 
     return wrapped
 
+
 def parse_date(value):
     if not value:
         return None
@@ -211,6 +238,7 @@ def parse_date(value):
     except ValueError:
         return datetime.fromisoformat(value + ":00")
 
+
 def format_datetime(value):
     date_time = parse_date(value)
 
@@ -219,9 +247,11 @@ def format_datetime(value):
 
     return date_time.strftime("%d %b %Y, %I:%M %p")
 
+
 @app.template_filter("datetime")
 def datetime_filter(value):
     return format_datetime(value)
+
 
 def update_expired_elections():
     now = datetime.now()
@@ -232,7 +262,11 @@ def update_expired_elections():
         end = parse_date(election["end_date"])
 
         if end and now > end:
-            execute_db("UPDATE Election SET is_active=0 WHERE id=?", (election["id"],))
+            execute_db(
+                "UPDATE Election SET is_active=0 WHERE id=?",
+                (election["id"],)
+            )
+
 
 @app.before_request
 def csrf_protect():
@@ -241,14 +275,21 @@ def csrf_protect():
             return
 
         token = session.get("csrf_token")
-        sent_token = request.form.get("csrf_token") or request.headers.get("X-CSRFToken")
-        
-        if not token or not sent_token or not secrets_lib.compare_digest(token, sent_token):
+        sent_token = (
+            request.form.get("csrf_token")
+            or request.headers.get("X-CSRFToken")
+        )
+
+        if not token or not sent_token or not secrets_lib.compare_digest(
+            token, sent_token
+        ):
             abort(403)
+
 
 @app.before_request
 def check_expired_elections():
     update_expired_elections()
+
 
 def user_voted_in_election(user_id, election_id):
     row = query_db("""
@@ -261,16 +302,22 @@ def user_voted_in_election(user_id, election_id):
 
     return row is not None
 
+
 def log_admin_action(action, details="", admin_id="__unset__"):
     if admin_id == "__unset__":
         admin = get_current_user()
-    
+
         if admin:
             admin_id = admin["id"]
         else:
             admin_id = None
 
-    execute_db("INSERT INTO AuditLog (admin_id, action, details) VALUES (?, ?, ?)", (admin_id, action, details))
+    execute_db(
+        "INSERT INTO AuditLog (admin_id, action, details) "
+        "VALUES (?, ?, ?)",
+        (admin_id, action, details)
+    )
+
 
 def is_candidate_in_election(user_id, election_id):
     row = query_db("""
@@ -283,13 +330,16 @@ def is_candidate_in_election(user_id, election_id):
 
     return row is not None
 
+
 @app.route("/")
 def home():
     return render_template("index.html", user=session.get("user_name"))
 
+
 @app.route("/login")
 def login_page():
     return render_template("login.html", client_id=GOOGLE_CLIENT_ID)
+
 
 @app.route("/login", methods=["POST"])
 def login_data():
@@ -301,7 +351,10 @@ def login_data():
     if not user_data:
         return jsonify({"error": "Unauthorized domain"}), 403
 
-    user = query_db("SELECT * FROM Users WHERE google_id=?", (user_data["google_id"],), one=True)
+    user = query_db(
+        "SELECT * FROM Users WHERE google_id=?",
+        (user_data["google_id"],), one=True
+    )
 
     if not user:
         if user_data["should_be_admin"]:
@@ -310,22 +363,38 @@ def login_data():
             is_admin_val = 0
 
         try:
-            execute_db("""INSERT INTO Users (google_id, email, name, is_admin) VALUES (?, ?, ?, ?)""", 
-                        (user_data["google_id"], user_data["email"], user_data["name"], is_admin_val))
+            execute_db(
+                "INSERT INTO Users (google_id, email, name, is_admin) "
+                "VALUES (?, ?, ?, ?)",
+                (
+                    user_data["google_id"], user_data["email"],
+                    user_data["name"], is_admin_val
+                )
+            )
 
         except sqlite3.IntegrityError:
-            pass 
+            pass
 
-        user = query_db("SELECT * FROM Users WHERE google_id=?", (user_data["google_id"],), one=True)
+        user = query_db(
+            "SELECT * FROM Users WHERE google_id=?",
+            (user_data["google_id"],), one=True
+        )
 
     else:
         if user_data["should_be_admin"] and not user["is_admin"]:
-            execute_db("UPDATE Users SET is_admin=1 WHERE id=?", (user["id"],))
+            execute_db(
+                "UPDATE Users SET is_admin=1 WHERE id=?", (user["id"],)
+            )
 
         if user["name"] != user_data["name"]:
-            execute_db("UPDATE Users SET name=? WHERE id=?", (user_data["name"], user["id"]))
+            execute_db(
+                "UPDATE Users SET name=? WHERE id=?",
+                (user_data["name"], user["id"])
+            )
 
-        user = query_db("SELECT * FROM Users WHERE id=?", (user["id"],), one=True)
+        user = query_db(
+            "SELECT * FROM Users WHERE id=?", (user["id"],), one=True
+        )
 
     session.clear()
     session.permanent = True
@@ -337,22 +406,25 @@ def login_data():
 
     return jsonify({"success": True})
 
+
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("home"))
 
+
 @app.route("/dashboard")
 @login_required
 def dashboard():
     user = get_current_user()
-    
+
     if user["is_admin"]:
         return redirect(url_for("admin_dashboard"))
     if is_candidate(user["id"]):
         return redirect(url_for("candidate_dashboard"))
-    
+
     return redirect(url_for("voter_dashboard"))
+
 
 @app.route("/voter")
 @login_required
@@ -364,12 +436,15 @@ def voter_dashboard():
     positions = []
 
     if election:
-        raw_positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election["id"],))
+        raw_positions = query_db(
+            "SELECT * FROM Positions WHERE election_id=?",
+            (election["id"],)
+        )
 
         for raw_position in raw_positions:
             candidates = query_db("""
-                SELECT Candidates.id AS candidate_id, Candidates.bio, Candidates.photo,
-                    Users.name AS candidate_name
+                SELECT Candidates.id AS candidate_id, Candidates.bio,
+                    Candidates.photo, Users.name AS candidate_name
                 FROM Candidates
                 JOIN Users ON Candidates.user_id = Users.id
                 WHERE Candidates.position_id = ?
@@ -383,14 +458,14 @@ def voter_dashboard():
                     media = json.loads(candidate["photo"])
                 else:
                     media = {}
-                    
+
                 candidates_list.append({
-                        "id": candidate["candidate_id"],
-                        "name": candidate["candidate_name"],
-                        "bio": candidate["bio"],
-                        "media": media,
+                    "id": candidate["candidate_id"],
+                    "name": candidate["candidate_name"],
+                    "bio": candidate["bio"],
+                    "media": media,
                 })
-            
+
             already_voted = query_db(
                 "SELECT id FROM Votes WHERE voter_id=? AND position_id=?",
                 (user["id"], raw_position["id"]), one=True
@@ -402,7 +477,11 @@ def voter_dashboard():
                 "has_voted": already_voted is not None,
             })
 
-    return render_template("voter_dashboard.html", user=user, election=election, positions=positions, voting_open=is_open, voting_message=message)
+    return render_template(
+        "voter_dashboard.html", user=user, election=election,
+        positions=positions, voting_open=is_open, voting_message=message
+    )
+
 
 @app.route("/vote/<int:position_id>/<int:candidate_id>", methods=["POST"])
 @login_required
@@ -414,10 +493,14 @@ def cast_vote(position_id, candidate_id):
     if not is_open:
         return jsonify({"error": message}), 403
 
-    position = query_db("SELECT * FROM Positions WHERE id=?", (position_id,), one=True)
+    position = query_db(
+        "SELECT * FROM Positions WHERE id=?", (position_id,), one=True
+    )
 
     if not position or position["election_id"] != election["id"]:
-        return jsonify({"error": "Invalid position for the current election."}), 400
+        return jsonify(
+            {"error": "Invalid position for the current election."}
+        ), 400
 
     candidate = query_db(
         "SELECT * FROM Candidates WHERE id=? AND position_id=?",
@@ -425,18 +508,24 @@ def cast_vote(position_id, candidate_id):
     )
 
     if not candidate:
-        return jsonify({"error": "Invalid candidate for this position."}), 400
+        return jsonify(
+            {"error": "Invalid candidate for this position."}
+        ), 400
 
     try:
         execute_db(
-            "INSERT INTO Votes (voter_id, position_id, candidate_id) VALUES (?, ?, ?)",
+            "INSERT INTO Votes (voter_id, position_id, candidate_id) "
+            "VALUES (?, ?, ?)",
             (user["id"], position_id, candidate_id)
         )
-        
+
     except sqlite3.IntegrityError:
-        return jsonify({"error": "You have already voted for this position."}), 409
+        return jsonify(
+            {"error": "You have already voted for this position."}
+        ), 409
 
     return jsonify({"success": True})
+
 
 @app.route("/candidate")
 @candidate_required
@@ -453,12 +542,19 @@ def candidate_dashboard():
     candidate_election = None
 
     if candidate_row:
-        candidate_election = query_db("SELECT * FROM Election WHERE id=?", (candidate_row["election_id"],), one=True)
+        candidate_election = query_db(
+            "SELECT * FROM Election WHERE id=?",
+            (candidate_row["election_id"],), one=True
+        )
 
     vote_count = None
 
-    if candidate_row and candidate_election and not candidate_election["is_active"]:
-        row = query_db("SELECT COUNT(*) AS c FROM Votes WHERE candidate_id=?", (candidate_row["id"],), one=True)
+    if candidate_row and candidate_election and \
+            not candidate_election["is_active"]:
+        row = query_db(
+            "SELECT COUNT(*) AS c FROM Votes WHERE candidate_id=?",
+            (candidate_row["id"],), one=True
+        )
 
         vote_count = row["c"]
 
@@ -467,13 +563,20 @@ def candidate_dashboard():
     else:
         media = {}
 
-    return render_template("candidate_dashboard.html", user=user, candidate=candidate_row, media=media, vote_count=vote_count)
+    return render_template(
+        "candidate_dashboard.html", user=user, candidate=candidate_row,
+        media=media, vote_count=vote_count
+    )
+
 
 @app.route("/candidate/profile", methods=["GET", "POST"])
 @candidate_required
 def candidate_profile():
     user = get_current_user()
-    candidate_row = query_db("SELECT * FROM Candidates WHERE user_id=?", (user["id"],), one=True)
+    candidate_row = query_db(
+        "SELECT * FROM Candidates WHERE user_id=?",
+        (user["id"],), one=True
+    )
 
     if candidate_row["photo"]:
         media = json.loads(candidate_row["photo"])
@@ -488,7 +591,10 @@ def candidate_profile():
             if YOUTUBE_URL_RE.match(video_url):
                 media["video_url"] = video_url
             else:
-                flash("Video link must be a YouTube video or YouTube Shorts link.", "error")
+                flash(
+                    "Video link must be a YouTube video or "
+                    "YouTube Shorts link.", "error"
+                )
 
         photo_file = request.files.get("photo_file")
 
@@ -496,15 +602,21 @@ def candidate_profile():
             ext = Path(photo_file.filename).suffix.lower().lstrip('.')
 
             if ext in ALLOWED_IMAGE_EXT:
-                filename = secure_filename(f"candidate_{candidate_row['id']}_photo.{ext}")
+                filename = secure_filename(
+                    f"candidate_{candidate_row['id']}_photo.{ext}"
+                )
                 full_path = Path(UPLOAD_FOLDER).resolve() / filename
 
-                if not str(full_path).startswith(str(Path(UPLOAD_FOLDER).resolve())):
+                if not str(full_path).startswith(
+                    str(Path(UPLOAD_FOLDER).resolve())
+                ):
                     abort(400)
 
                 photo_file.save(full_path)
 
-                media["photo"] = url_for("static", filename=f"uploads/candidates/{filename}")
+                media["photo"] = url_for(
+                    "static", filename=f"uploads/candidates/{filename}"
+                )
             else:
                 flash("Photo must be PNG, JPG or WEBP.", "error")
 
@@ -514,37 +626,54 @@ def candidate_profile():
             ext = Path(voice_file.filename).suffix.lower().lstrip('.')
 
             if ext in ALLOWED_AUDIO_EXT:
-                filename = secure_filename(f"candidate_{candidate_row['id']}_voice.{ext}")
+                filename = secure_filename(
+                    f"candidate_{candidate_row['id']}_voice.{ext}"
+                )
                 voice_file.save(os.path.join(UPLOAD_FOLDER, filename))
 
-                media["voice"] = url_for("static", filename=f"uploads/candidates/{filename}")
+                media["voice"] = url_for(
+                    "static", filename=f"uploads/candidates/{filename}"
+                )
             else:
-                flash("Voice clip must be webm, mp3, wav or ogg.", "error")
+                flash(
+                    "Voice clip must be webm, mp3, wav or ogg.", "error"
+                )
 
-        execute_db("UPDATE Candidates SET bio=?, photo=? WHERE id=? AND user_id=?",
-                   (bio, json.dumps(media), candidate_row["id"], user["id"]))
+        execute_db(
+            "UPDATE Candidates SET bio=?, photo=? "
+            "WHERE id=? AND user_id=?",
+            (bio, json.dumps(media), candidate_row["id"], user["id"])
+        )
 
         flash("Profile updated.", "success")
 
         return redirect(url_for("candidate_dashboard"))
 
-    return render_template("candidate_profile.html", candidate=candidate_row, media=media)
+    return render_template(
+        "candidate_profile.html", candidate=candidate_row, media=media
+    )
+
 
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
     user = get_current_user()
-    election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+    election = get_active_election() or query_db(
+        "SELECT * FROM Election ORDER BY id DESC", one=True
+    )
 
     stats = {
-        "positions": 0, 
-        "candidates": 0, 
+        "positions": 0,
+        "candidates": 0,
         "votes": 0
     }
 
     if election:
-        stats["positions"] = query_db("SELECT COUNT(*) AS c FROM Positions WHERE election_id=?", (election["id"],), one=True)["c"]
-        
+        stats["positions"] = query_db(
+            "SELECT COUNT(*) AS c FROM Positions WHERE election_id=?",
+            (election["id"],), one=True
+        )["c"]
+
         stats["candidates"] = query_db("""
             SELECT COUNT(*) AS c FROM Candidates
             JOIN Positions ON Candidates.position_id = Positions.id
@@ -557,28 +686,37 @@ def admin_dashboard():
             WHERE Positions.election_id=?
         """, (election["id"],), one=True)["c"]
 
-    return render_template("admin_dashboard.html", user=user, election=election, stats=stats)
+    return render_template(
+        "admin_dashboard.html", user=user, election=election, stats=stats
+    )
+
 
 @app.errorhandler(404)
 def not_found(error):
     return render_template("404.html"), 404
 
+
 @app.errorhandler(403)
 def forbidden(error):
     return render_template("403.html"), 403
+
 
 @app.context_processor
 def inject_csrf_token():
     if "csrf_token" not in session:
         session["csrf_token"] = secrets_lib.token_hex(32)
-        
+
     return dict(csrf_token=session["csrf_token"])
+
 
 @app.context_processor
 def inject_announcements():
-    active = query_db("SELECT * FROM Announcements WHERE is_active=1 ORDER BY id DESC")
+    active = query_db(
+        "SELECT * FROM Announcements WHERE is_active=1 ORDER BY id DESC"
+    )
 
     return dict(site_announcements=active)
+
 
 def voting_is_open(election):
     if not election or not election["is_active"]:
@@ -589,12 +727,15 @@ def voting_is_open(election):
     end = parse_date(election["end_date"])
 
     if start and now < start:
-        return False, f"Voting starts {start.strftime('%d %b %Y, %I:%M %p')}"
-    
+        return False, (
+            f"Voting starts {start.strftime('%d %b %Y, %I:%M %p')}"
+        )
+
     if end and now > end:
         return False, "Voting has stopped for this election"
-    
+
     return True, None
+
 
 @app.route("/admin/elections", methods=["GET", "POST"])
 @admin_required
@@ -614,10 +755,15 @@ def admin_elections():
             if end_dt and end_dt <= datetime.now():
                 flash("End date/time must be in the future.", "error")
             elif start_dt and end_dt and end_dt <= start_dt:
-                flash("End date/time must be after the start date/time.", "error")
+                flash(
+                    "End date/time must be after the start date/time.",
+                    "error"
+                )
             else:
                 execute_db("""
-                    INSERT INTO Election (title, description, start_date, end_date, is_active)
+                    INSERT INTO Election
+                        (title, description, start_date, end_date,
+                         is_active)
                     VALUES (?, ?, ?, ?, 0)
                 """, (title, description, start_date, end_date))
 
@@ -627,7 +773,10 @@ def admin_elections():
 
         elif action == "toggle_active":
             election_id = request.form.get("election_id")
-            election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+            election = query_db(
+                "SELECT * FROM Election WHERE id=?",
+                (election_id,), one=True
+            )
 
             if not election:
                 flash("Election not found.", "error")
@@ -635,19 +784,35 @@ def admin_elections():
                 end = parse_date(election["end_date"])
 
                 if end and datetime.now() > end:
-                    flash(f"Can't activate '{election['title']}' — its end time has already passed. Please Create a new one or edit it's end time", "error")
+                    flash(
+                        f"Can't activate '{election['title']}' — its "
+                        "end time has already passed. Please Create a "
+                        "new one or edit it's end time", "error"
+                    )
                 else:
                     execute_db("UPDATE Election SET is_active = 0")
-                    execute_db("UPDATE Election SET is_active = 1 WHERE id = ?", (election_id,))
-                    flash(f"'{election['title']}' activated. All other elections were deactivated.", "success")
+                    execute_db(
+                        "UPDATE Election SET is_active = 1 WHERE id = ?",
+                        (election_id,)
+                    )
+                    flash(
+                        f"'{election['title']}' activated. All other "
+                        "elections were deactivated.", "success"
+                    )
 
             return redirect(url_for("admin_elections"))
 
         elif action == "deactivate":
             election_id = request.form.get("election_id")
-            election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+            election = query_db(
+                "SELECT * FROM Election WHERE id=?",
+                (election_id,), one=True
+            )
 
-            execute_db("UPDATE Election SET is_active = 0 WHERE id = ?", (election_id,))
+            execute_db(
+                "UPDATE Election SET is_active = 0 WHERE id = ?",
+                (election_id,)
+            )
 
             if election:
                 flash(f"'{election['title']}' closed.", "info")
@@ -656,7 +821,10 @@ def admin_elections():
 
         elif action == "update_dates":
             election_id = request.form.get("election_id")
-            election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+            election = query_db(
+                "SELECT * FROM Election WHERE id=?",
+                (election_id,), one=True
+            )
 
             title = request.form.get("title", "").strip()
             description = request.form.get("description", "").strip()
@@ -669,12 +837,17 @@ def admin_elections():
             if end_dt and end_dt <= datetime.now():
                 flash("End date/time must be in the future.", "error")
             elif start_dt and end_dt and end_dt <= start_dt:
-                flash("End date/time must be after the start date/time.", "error")
+                flash(
+                    "End date/time must be after the start date/time.",
+                    "error"
+                )
             else:
                 execute_db("""
-                    UPDATE Election SET title=?, description=?, start_date=?, end_date=?
+                    UPDATE Election
+                    SET title=?, description=?, start_date=?, end_date=?
                     WHERE id=?
-                """, (title, description, start_date, end_date, election_id))
+                """, (title, description, start_date, end_date,
+                      election_id))
 
                 if election:
                     flash(f"'{election['title']}' updated.", "info")
@@ -687,6 +860,7 @@ def admin_elections():
 
     return render_template("admin_elections.html", elections=elections)
 
+
 @app.route("/admin/positions", methods=["GET", "POST"])
 @admin_required
 def admin_positions():
@@ -698,15 +872,23 @@ def admin_positions():
         if action == "create":
 
             execute_db(
-                "INSERT INTO Positions (election_id, position_name, max_votes) VALUES (?, ?, ?)",
-                (request.form.get("election_id"), request.form.get("position_name", "").strip(),
-                 request.form.get("max_votes", 1))
+                "INSERT INTO Positions "
+                "(election_id, position_name, max_votes) "
+                "VALUES (?, ?, ?)",
+                (
+                    request.form.get("election_id"),
+                    request.form.get("position_name", "").strip(),
+                    request.form.get("max_votes", 1)
+                )
             )
 
             flash("Position added.", "success")
 
         elif action == "delete":
-            execute_db("DELETE FROM Positions WHERE id=?", (request.form.get("position_id"),))
+            execute_db(
+                "DELETE FROM Positions WHERE id=?",
+                (request.form.get("position_id"),)
+            )
 
             flash("Position removed.", "info")
 
@@ -715,11 +897,17 @@ def admin_positions():
     elections = query_db("SELECT * FROM Election ORDER BY id DESC")
 
     if election_id:
-        positions = query_db("SELECT * FROM Positions WHERE election_id=?",(election_id,))
+        positions = query_db(
+            "SELECT * FROM Positions WHERE election_id=?", (election_id,)
+        )
     else:
         positions = []
 
-    return render_template("admin_positions.html", elections=elections, positions=positions, election_id=election_id)
+    return render_template(
+        "admin_positions.html", elections=elections, positions=positions,
+        election_id=election_id
+    )
+
 
 @app.route("/admin/api/users/search")
 @admin_required
@@ -737,7 +925,10 @@ def api_users_search():
         LIMIT 8
     """, (like, like))
 
-    return jsonify([{"name": row["name"], "email": row["email"]} for row in rows])
+    return jsonify(
+        [{"name": row["name"], "email": row["email"]} for row in rows]
+    )
+
 
 @app.route("/admin/candidates", methods=["GET", "POST"])
 @admin_required
@@ -746,54 +937,82 @@ def admin_candidates():
 
     if request.method == "POST":
         action = request.form.get("action")
-        
+
         if action == "assign":
             query_text = request.form.get("student_query", "").strip()
             student = None
             error_message = None
 
             student = query_db(
-                "SELECT * FROM Users WHERE LOWER(email)=LOWER(?)", (query_text,), one=True
+                "SELECT * FROM Users WHERE LOWER(email)=LOWER(?)",
+                (query_text,), one=True
             )
 
             if not student:
                 name_matches = query_db(
-                    "SELECT * FROM Users WHERE LOWER(name)=LOWER(?)", (query_text,)
+                    "SELECT * FROM Users WHERE LOWER(name)=LOWER(?)",
+                    (query_text,)
                 )
 
                 if len(name_matches) == 1:
                     student = name_matches[0]
                 elif len(name_matches) > 1:
-                    error_message = "More than one student has that name — please use their email instead, or pick them from the suggestions."
+                    error_message = (
+                        "More than one student has that name — please "
+                        "use their email instead, or pick them from "
+                        "the suggestions."
+                    )
 
             if not student:
-                flash(error_message or "That student hasn't logged into the site yet. Ask them to sign in once first, or double check the spelling.", "error")
+                flash(
+                    error_message or
+                    "That student hasn't logged into the site yet. "
+                    "Ask them to sign in once first, or double check "
+                    "the spelling.", "error"
+                )
             else:
                 existing = query_db(
-                    "SELECT id FROM Candidates WHERE user_id=? AND position_id=?",
-                    (student["id"], request.form.get("position_id")), one=True
+                    "SELECT id FROM Candidates "
+                    "WHERE user_id=? AND position_id=?",
+                    (student["id"], request.form.get("position_id")),
+                    one=True
                 )
 
                 if existing:
-                    flash("That student is already a candidate for this position.", "error")
+                    flash(
+                        "That student is already a candidate for "
+                        "this position.", "error"
+                    )
                 else:
                     execute_db(
-                        "INSERT INTO Candidates (position_id, user_id, bio, photo) VALUES (?, ?, '', '{}')",
+                        "INSERT INTO Candidates "
+                        "(position_id, user_id, bio, photo) "
+                        "VALUES (?, ?, '', '{}')",
                         (request.form.get("position_id"), student["id"])
                     )
-                    flash(f"{student['name']} added as a candidate.", "success")
+                    flash(
+                        f"{student['name']} added as a candidate.",
+                        "success"
+                    )
 
         elif action == "remove":
-            execute_db("DELETE FROM Candidates WHERE id=?", (request.form.get("candidate_id"),))
+            execute_db(
+                "DELETE FROM Candidates WHERE id=?",
+                (request.form.get("candidate_id"),)
+            )
 
             flash("Candidate removed.", "info")
 
-        return redirect(url_for("admin_candidates", election_id=election_id))
+        return redirect(
+            url_for("admin_candidates", election_id=election_id)
+        )
 
     elections = query_db("SELECT * FROM Election ORDER BY id DESC")
 
     if election_id:
-        positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election_id,))
+        positions = query_db(
+            "SELECT * FROM Positions WHERE election_id=?", (election_id,)
+        )
     else:
         positions = []
 
@@ -801,14 +1020,19 @@ def admin_candidates():
 
     if election_id:
         candidates = query_db("""
-            SELECT Candidates.id, Candidates.bio, Positions.position_name, Users.name, Users.email
+            SELECT Candidates.id, Candidates.bio, Positions.position_name,
+                Users.name, Users.email
             FROM Candidates
             JOIN Positions ON Candidates.position_id = Positions.id
             JOIN Users ON Candidates.user_id = Users.id
             WHERE Positions.election_id = ?
         """, (election_id,))
 
-    return render_template("admin_candidates.html", elections=elections, positions=positions, candidates=candidates, election_id=election_id)
+    return render_template(
+        "admin_candidates.html", elections=elections, positions=positions,
+        candidates=candidates, election_id=election_id
+    )
+
 
 @app.route("/candidate/results")
 @candidate_required
@@ -826,11 +1050,14 @@ def candidate_results_list():
 
     return render_template("candidate_results_list.html", elections=elections)
 
+
 @app.route("/candidate/results/<int:election_id>")
 @candidate_required
 def candidate_results(election_id):
     user = get_current_user()
-    election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+    election = query_db(
+        "SELECT * FROM Election WHERE id=?", (election_id,), one=True
+    )
 
     if not election or election["is_active"]:
         abort(403)
@@ -838,23 +1065,38 @@ def candidate_results(election_id):
     if not is_candidate_in_election(user["id"], election_id):
         abort(403)
 
-    positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election_id,))
+    positions = query_db(
+        "SELECT * FROM Positions WHERE election_id=?", (election_id,)
+    )
 
-    return render_template("candidate_results.html", election=election, positions=positions)
+    return render_template(
+        "candidate_results.html", election=election, positions=positions
+    )
+
 
 @app.route("/candidate/api/results/<int:position_id>")
 @candidate_required
 def candidate_api_results(position_id):
     user = get_current_user()
-    position = query_db("SELECT * FROM Positions WHERE id=?", (position_id,), one=True)
+    position = query_db(
+        "SELECT * FROM Positions WHERE id=?", (position_id,), one=True
+    )
 
     if not position:
         return jsonify({"error": "not found"}), 404
 
-    election = query_db("SELECT * FROM Election WHERE id=?", (position["election_id"],), one=True)
+    election = query_db(
+        "SELECT * FROM Election WHERE id=?",
+        (position["election_id"],), one=True
+    )
 
     if not election or election["is_active"]:
-        return jsonify({"error": "Results aren't available until this election has closed."}), 403
+        return jsonify({
+            "error": (
+                "Results aren't available until this election has "
+                "closed."
+            )
+        }), 403
 
     if not is_candidate_in_election(user["id"], election["id"]):
         return jsonify({"error": "forbidden"}), 403
@@ -869,7 +1111,9 @@ def candidate_api_results(position_id):
         ORDER BY votes DESC, Users.name ASC
     """, (position_id,))
 
-    candidates = [{"name": r["name"], "votes": int(r["votes"])} for r in rows]
+    candidates = [
+        {"name": r["name"], "votes": int(r["votes"])} for r in rows
+    ]
     total_votes = sum(c["votes"] for c in candidates)
 
     return jsonify({
@@ -877,6 +1121,7 @@ def candidate_api_results(position_id):
         "candidates": candidates,
         "total_votes": total_votes
     })
+
 
 @app.route("/admin/api/results/<int:position_id>")
 @admin_required
@@ -904,7 +1149,7 @@ def api_results(position_id):
 
     for r in rows:
         candidate_data = {
-            "name": r["name"], 
+            "name": r["name"],
             "votes": int(r["votes"])
         }
         candidates.append(candidate_data)
@@ -919,15 +1164,20 @@ def api_results(position_id):
         "total_votes": total_votes
     })
 
+
 @app.route("/admin/api/turnout")
 @admin_required
 def api_turnout():
-    election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+    election = get_active_election() or query_db(
+        "SELECT * FROM Election ORDER BY id DESC", one=True
+    )
 
     if not election:
         return jsonify({"voted": 0, "eligible": 0})
 
-    eligible = query_db("SELECT COUNT(*) AS c FROM Users WHERE is_admin = 0", one=True)["c"]
+    eligible = query_db(
+        "SELECT COUNT(*) AS c FROM Users WHERE is_admin = 0", one=True
+    )["c"]
 
     voted = query_db("""
         SELECT COUNT(DISTINCT Votes.voter_id) AS c
@@ -937,17 +1187,26 @@ def api_turnout():
 
     return jsonify({"voted": voted, "eligible": eligible})
 
+
 @app.route("/admin/results")
 @admin_required
 def admin_results():
-    election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+    election = get_active_election() or query_db(
+        "SELECT * FROM Election ORDER BY id DESC", one=True
+    )
 
     if election:
-        positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election["id"],))
+        positions = query_db(
+            "SELECT * FROM Positions WHERE election_id=?",
+            (election["id"],)
+        )
     else:
         positions = []
-        
-    return render_template("admin_results.html", election=election, positions=positions)
+
+    return render_template(
+        "admin_results.html", election=election, positions=positions
+    )
+
 
 @app.route("/voter/results")
 @login_required
@@ -967,7 +1226,8 @@ def voter_results_list():
 
     for election in elections:
         rows = query_db("""
-            SELECT Positions.position_name AS position_name, Users.name AS candidate_name
+            SELECT Positions.position_name AS position_name,
+                Users.name AS candidate_name
             FROM Votes
             JOIN Positions ON Votes.position_id = Positions.id
             JOIN Candidates ON Votes.candidate_id = Candidates.id
@@ -978,13 +1238,18 @@ def voter_results_list():
 
         my_votes[election["id"]] = rows
 
-    return render_template("voter_results_list.html", elections=elections, my_votes=my_votes)
+    return render_template(
+        "voter_results_list.html", elections=elections, my_votes=my_votes
+    )
+
 
 @app.route("/voter/results/<int:election_id>")
 @login_required
 def voter_results(election_id):
     user = get_current_user()
-    election = query_db("SELECT * FROM Election WHERE id=?", (election_id,), one=True)
+    election = query_db(
+        "SELECT * FROM Election WHERE id=?", (election_id,), one=True
+    )
 
     if not election or election["is_active"]:
         abort(403)
@@ -992,23 +1257,38 @@ def voter_results(election_id):
     if not user_voted_in_election(user["id"], election_id):
         abort(403)
 
-    positions = query_db("SELECT * FROM Positions WHERE election_id=?", (election_id,))
+    positions = query_db(
+        "SELECT * FROM Positions WHERE election_id=?", (election_id,)
+    )
 
-    return render_template("voter_results.html", election=election, positions=positions)
+    return render_template(
+        "voter_results.html", election=election, positions=positions
+    )
+
 
 @app.route("/voter/api/results/<int:position_id>")
 @login_required
 def voter_api_results(position_id):
     user = get_current_user()
-    position = query_db("SELECT * FROM Positions WHERE id=?", (position_id,), one=True)
+    position = query_db(
+        "SELECT * FROM Positions WHERE id=?", (position_id,), one=True
+    )
 
     if not position:
         return jsonify({"error": "not found"}), 404
 
-    election = query_db("SELECT * FROM Election WHERE id=?", (position["election_id"],), one=True)
+    election = query_db(
+        "SELECT * FROM Election WHERE id=?",
+        (position["election_id"],), one=True
+    )
 
     if not election or election["is_active"]:
-        return jsonify({"error": "Results aren't available until this election has closed."}), 403
+        return jsonify({
+            "error": (
+                "Results aren't available until this election has "
+                "closed."
+            )
+        }), 403
 
     if not user_voted_in_election(user["id"], election["id"]):
         return jsonify({"error": "forbidden"}), 403
@@ -1023,7 +1303,9 @@ def voter_api_results(position_id):
         ORDER BY votes DESC, Users.name ASC
     """, (position_id,))
 
-    candidates = [{"name": r["name"], "votes": int(r["votes"])} for r in rows]
+    candidates = [
+        {"name": r["name"], "votes": int(r["votes"])} for r in rows
+    ]
     total_votes = sum(c["votes"] for c in candidates)
 
     return jsonify({
@@ -1032,10 +1314,13 @@ def voter_api_results(position_id):
         "total_votes": total_votes
     })
 
+
 @app.route("/admin/voters")
 @admin_required
 def admin_voters():
-    election = get_active_election() or query_db("SELECT * FROM Election ORDER BY id DESC", one=True)
+    election = get_active_election() or query_db(
+        "SELECT * FROM Election ORDER BY id DESC", one=True
+    )
     search = request.args.get("q", "").strip()
 
     voters = []
@@ -1044,7 +1329,8 @@ def admin_voters():
         query = """
             SELECT Users.id, Users.name, Users.email,
                    MIN(Votes.time) AS first_vote_time,
-                   GROUP_CONCAT(Positions.position_name, ', ') AS positions_voted
+                   GROUP_CONCAT(Positions.position_name, ', ')
+                       AS positions_voted
             FROM Votes
             JOIN Positions ON Votes.position_id = Positions.id
             JOIN Users ON Votes.voter_id = Users.id
@@ -1060,7 +1346,11 @@ def admin_voters():
 
         voters = query_db(query, tuple(params))
 
-    return render_template("admin_voters.html", election=election, voters=voters, search=search)
+    return render_template(
+        "admin_voters.html", election=election, voters=voters,
+        search=search
+    )
+
 
 @app.route("/admin/manage-admins", methods=["GET", "POST"])
 @admin_required
@@ -1073,13 +1363,17 @@ def manage_admins():
 
         if str(current_user["id"]) == str(target_id):
             flash("You can't change your own admin rights.", "error")
-        
+
         elif action == "promote":
-            execute_db("UPDATE Users SET is_admin=1 WHERE id=?", (target_id,))
+            execute_db(
+                "UPDATE Users SET is_admin=1 WHERE id=?", (target_id,)
+            )
             flash("User has been promoted to admin.", "success")
-        
+
         elif action == "demote":
-            execute_db("UPDATE Users SET is_admin=0 WHERE id=?", (target_id,))
+            execute_db(
+                "UPDATE Users SET is_admin=0 WHERE id=?", (target_id,)
+            )
             flash("User has been demoted from admin.", "info")
 
         return redirect(url_for("manage_admins"))
@@ -1088,13 +1382,18 @@ def manage_admins():
 
     if search:
         users = query_db(
-            "SELECT * FROM Users WHERE email LIKE ? OR name LIKE ? ORDER BY name", 
-            (f"%{search}%", f"%{search}%"))
-        
+            "SELECT * FROM Users WHERE email LIKE ? OR name LIKE ? "
+            "ORDER BY name",
+            (f"%{search}%", f"%{search}%")
+        )
+
     else:
         users = query_db("SELECT * FROM Users ORDER BY is_admin DESC, name")
 
-    return render_template("admin_manage_admins.html", users=users, search=search)
+    return render_template(
+        "admin_manage_admins.html", users=users, search=search
+    )
+
 
 @app.route("/admin/announcements", methods=["GET", "POST"])
 @admin_required
@@ -1108,23 +1407,36 @@ def admin_announcements():
 
             if message:
                 execute_db(
-                    "INSERT INTO Announcements (message, level, created_by) VALUES (?, ?, ?)", (message, level, session["user_id"]))
-                
+                    "INSERT INTO Announcements "
+                    "(message, level, created_by) VALUES (?, ?, ?)",
+                    (message, level, session["user_id"])
+                )
+
                 log_admin_action("create_announcement", message)
                 flash("Announcement posted.", "success")
 
         elif action == "deactivate":
             announcement_id = request.form.get("announcement_id")
-            execute_db("UPDATE Announcements SET is_active=0 WHERE id=?", (announcement_id,))
+            execute_db(
+                "UPDATE Announcements SET is_active=0 WHERE id=?",
+                (announcement_id,)
+            )
 
-            log_admin_action("deactivate_announcement", f"id={announcement_id}")
+            log_admin_action(
+                "deactivate_announcement", f"id={announcement_id}"
+            )
             flash("Announcement removed.", "info")
 
         return redirect(url_for("admin_announcements"))
 
-    announcements = query_db("SELECT * FROM Announcements ORDER BY id DESC LIMIT 50")
+    announcements = query_db(
+        "SELECT * FROM Announcements ORDER BY id DESC LIMIT 50"
+    )
 
-    return render_template("admin_announcements.html", announcements=announcements)
+    return render_template(
+        "admin_announcements.html", announcements=announcements
+    )
+
 
 @app.route("/admin/audit-log")
 @admin_required
@@ -1135,20 +1447,24 @@ def admin_audit_log():
         ORDER BY AuditLog.id DESC
         LIMIT 200
     """)
-    
+
     return render_template("admin_audit_log.html", logs=logs)
+
 
 @app.route("/terms")
 def terms():
     return render_template("terms.html")
 
+
 @app.route("/privacy")
 def privacy():
     return render_template("privacy.html")
 
+
 @app.route("/about")
 def about():
     return render_template("about.html")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
