@@ -37,11 +37,15 @@ Announcements
             <th>Message</th>
             <th>Level</th>
             <th>Posted</th>
+            <th></th>
         </tr>
 
         {% for announcement in announcements %}
         <tr>
-            <td>{{ announcement.message }}</td>
+            <td>
+                <p class="announcement-message" id="msg{{ announcement.id }}">{{ announcement.message }}</p>
+                <button type="button" class="message-toggle" data-target="msg{{ announcement.id }}">Show more</button>
+            </td>
             <td>{{ announcement.level }}</td>
             <td>{{ announcement.created_at|datetime }}</td>
             <td>
@@ -68,4 +72,8 @@ Announcements
     
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin_announcements.js') }}"></script>
 {% endblock %}
