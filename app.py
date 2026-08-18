@@ -253,12 +253,56 @@ def datetime_filter(value):
     return format_datetime(value)
 
 
-def update_expired_elections():
+def election_dates_conflict(start_date, end_date, exclude_id=None):
+    """Return the title of an existing election whose voting window
+    overlaps with the given start/end, or None if there's no clash.
+
+    Missing dates are treated as open-ended (extend forever in that
+    direction), since only one election can ever be running at once.
+    """
+    start_dt = parse_date(start_date)
+    end_dt = parse_date(end_date)
+
+    other_elections = query_db(
+        "SELECT id, title, start_date, end_date FROM Election"
+    )
+
+    for other in other_elections:
+        if exclude_id and str(other["id"]) == str(exclude_id):
+            continue
+
+        other_start = parse_date(other["start_date"])
+        other_end = parse_date(other["end_date"])
+
+        # No overlap if the new window ends before the other starts,
+        # or starts after the other has already ended.
+        new_ends_first = (
+            end_dt and other_start and end_dt <= other_start
+        )
+        other_ends_first = (
+            other_end and start_dt and start_dt >= other_end
+        )
+
+        if not new_ends_first and not other_ends_first:
+            return other["title"]
+
+    return None
+
+
+def sync_election_status():
+    """Keep is_active in sync with each election's start/end window:
+    close out any election whose end_date has passed, then — if
+    nothing else is currently running — open the next election whose
+    start_date has arrived. Overlap prevention at creation/edit time
+    guarantees at most one election can match at any given moment.
+    """
     now = datetime.now()
 
-    elections = query_db("SELECT id, end_date FROM Election WHERE is_active=1")
+    active_elections = query_db(
+        "SELECT id, end_date FROM Election WHERE is_active=1"
+    )
 
-    for election in elections:
+    for election in active_elections:
         end = parse_date(election["end_date"])
 
         if end and now > end:
@@ -266,6 +310,28 @@ def update_expired_elections():
                 "UPDATE Election SET is_active=0 WHERE id=?",
                 (election["id"],)
             )
+
+    still_active = query_db(
+        "SELECT id FROM Election WHERE is_active=1", one=True
+    )
+
+    if still_active:
+        return
+
+    candidates = query_db(
+        "SELECT id, start_date, end_date FROM Election WHERE is_active=0"
+    )
+
+    for election in candidates:
+        start = parse_date(election["start_date"])
+        end = parse_date(election["end_date"])
+
+        if start and now >= start and (not end or now <= end):
+            execute_db(
+                "UPDATE Election SET is_active=1 WHERE id=?",
+                (election["id"],)
+            )
+            break
 
 
 @app.before_request
@@ -288,7 +354,7 @@ def csrf_protect():
 
 @app.before_request
 def check_expired_elections():
-    update_expired_elections()
+    sync_election_status()
 
 
 def user_voted_in_election(user_id, election_id):
@@ -744,7 +810,7 @@ def admin_elections():
         action = request.form.get("action")
 
         if action == "create":
-            title = request.form.get("title", "").strip()
+            title = request.form.get("title", "").strip()[:100]
             description = request.form.get("description", "").strip()
             start_date = request.form.get("start_date") or None
             end_date = request.form.get("end_date") or None
@@ -752,11 +818,21 @@ def admin_elections():
             start_dt = parse_date(start_date)
             end_dt = parse_date(end_date)
 
+            conflict_title = election_dates_conflict(start_date, end_date)
+
             if end_dt and end_dt <= datetime.now():
                 flash("End date/time must be in the future.", "error")
             elif start_dt and end_dt and end_dt <= start_dt:
                 flash(
                     "End date/time must be after the start date/time.",
+                    "error"
+                )
+            elif conflict_title:
+                flash(
+                    "These dates overlap with "
+                    f"'{conflict_title}'. Only one election can be "
+                    "running at a time, so voting windows can't "
+                    "overlap. Please choose different dates.",
                     "error"
                 )
             else:
@@ -809,15 +885,24 @@ def admin_elections():
                 (election_id,), one=True
             )
 
+            now_str = datetime.now().strftime("%Y-%m-%dT%H:%M")
+
             execute_db(
-                "UPDATE Election SET is_active = 0 WHERE id = ?",
-                (election_id,)
+                "UPDATE Election SET is_active = 0, end_date = ? "
+                "WHERE id = ?",
+                (now_str, election_id)
             )
 
             if election:
-                flash(f"'{election['title']}' closed.", "info")
+                flash(
+                    f"'{election['title']}' closed early. Its end "
+                    "time has been set to now so it won't restart on "
+                    "its own.", "info"
+                )
             else:
                 flash("Election closed.", "info")
+
+            return redirect(url_for("admin_elections"))
 
         elif action == "update_dates":
             election_id = request.form.get("election_id")
@@ -826,7 +911,7 @@ def admin_elections():
                 (election_id,), one=True
             )
 
-            title = request.form.get("title", "").strip()
+            title = request.form.get("title", "").strip()[:100]
             description = request.form.get("description", "").strip()
             start_date = request.form.get("start_date") or None
             end_date = request.form.get("end_date") or None
@@ -834,11 +919,23 @@ def admin_elections():
             start_dt = parse_date(start_date)
             end_dt = parse_date(end_date)
 
+            conflict_title = election_dates_conflict(
+                start_date, end_date, exclude_id=election_id
+            )
+
             if end_dt and end_dt <= datetime.now():
                 flash("End date/time must be in the future.", "error")
             elif start_dt and end_dt and end_dt <= start_dt:
                 flash(
                     "End date/time must be after the start date/time.",
+                    "error"
+                )
+            elif conflict_title:
+                flash(
+                    "These dates overlap with "
+                    f"'{conflict_title}'. Only one election can be "
+                    "running at a time, so voting windows can't "
+                    "overlap. Please choose different dates.",
                     "error"
                 )
             else:
