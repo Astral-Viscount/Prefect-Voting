@@ -1088,6 +1088,7 @@ def admin_candidates():
                     "Ask them to sign in once first, or double check "
                     "the spelling.", "error"
                 )
+
             else:
                 existing = query_db(
                     "SELECT id FROM Candidates "
