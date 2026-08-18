@@ -273,12 +273,6 @@ def datetime_filter(value):
 
 
 def election_dates_conflict(start_date, end_date, exclude_id=None):
-    """Return the title of an existing election whose voting window
-    overlaps with the given start/end, or None if there's no clash.
-
-    Missing dates are treated as open-ended (extend forever in that
-    direction), since only one election can ever be running at once.
-    """
     start_dt = parse_date(start_date)
     end_dt = parse_date(end_date)
 
@@ -293,8 +287,6 @@ def election_dates_conflict(start_date, end_date, exclude_id=None):
         other_start = parse_date(other["start_date"])
         other_end = parse_date(other["end_date"])
 
-        # No overlap if the new window ends before the other starts,
-        # or starts after the other has already ended.
         new_ends_first = (
             end_dt and other_start and end_dt <= other_start
         )
@@ -309,12 +301,6 @@ def election_dates_conflict(start_date, end_date, exclude_id=None):
 
 
 def sync_election_status():
-    """Keep is_active in sync with each election's start/end window:
-    close out any election whose end_date has passed, then — if
-    nothing else is currently running — open the next election whose
-    start_date has arrived. Overlap prevention at creation/edit time
-    guarantees at most one election can match at any given moment.
-    """
     now = datetime.now()
 
     active_elections = query_db(
