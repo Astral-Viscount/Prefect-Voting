@@ -14,7 +14,7 @@ Manage Elections
         <input type="hidden" name="action" value="create">
 
         <label>Title</label>
-        <input type="text" name="title" required>
+        <input type="text" name="title" maxlength="100" required>
 
         <label>Description</label>
         <textarea name="description" rows="3"></textarea>
@@ -90,7 +90,8 @@ Manage Elections
                     <input type="hidden" name="election_id" value="{{ election.id }}">
 
                     <label>Title</label>
-                    <input type="text" name="title" value="{{ election.title }}" required>
+                    <input type="text" name="title" value="{{ election.title }}" maxlength="100" required>
+                    
 
                     <label>Description</label>
                     <textarea name="description" rows="3">{{ election.description or "" }}</textarea>
