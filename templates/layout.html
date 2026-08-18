@@ -34,13 +34,13 @@
 
             {% if not session.get('is_admin') %}
 
-                {% if session.get('is_candidate') %}
+                {% if is_candidate_ever %}
                     <a href="{{ url_for('candidate_profile') }}">Edit Profile</a>
-                    <a href="{{ url_for('candidate_results_list') }}">My Results</a>
+                    <a href="{{ url_for('candidate_results_list') }}">My Candidate Results</a>
+                {% endif %}
 
-                {% else %}
+                {% if not is_candidate_now %}
                     <a href="{{ url_for('voter_results_list') }}">My Results</a>
-
                 {% endif %}
             
             {% else %}

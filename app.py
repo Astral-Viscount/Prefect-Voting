@@ -183,6 +183,13 @@ def get_active_election():
     return query_db("SELECT * FROM Election WHERE is_active=1", one=True)
 
 
+def is_candidate_in_active_election(user_id):
+    election = get_active_election()
+    if not election:
+        return False
+    return is_candidate_in_election(user_id, election["id"])
+
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -248,7 +255,7 @@ def voter_required(view):
             session.clear()
             return redirect(url_for("login_page"))
 
-        if user["is_admin"] or is_candidate(user["id"]):
+        if user["is_admin"] or is_candidate_in_active_election(user["id"]):
             return render_template("403.html"), 403
 
         return view(*args, **kwargs)
@@ -365,6 +372,8 @@ def csrf_protect():
 @app.before_request
 def check_expired_elections():
     sync_election_status()
+
+
 
 
 def user_voted_in_election(user_id, election_id):
@@ -496,7 +505,7 @@ def dashboard():
 
     if user["is_admin"]:
         return redirect(url_for("admin_dashboard"))
-    if is_candidate(user["id"]):
+    if is_candidate_in_active_election(user["id"]):
         return redirect(url_for("candidate_dashboard"))
 
     return redirect(url_for("voter_dashboard"))
@@ -794,6 +803,15 @@ def inject_announcements():
     )
 
     return dict(site_announcements=active)
+
+
+@app.context_processor
+def inject_role_flags():
+    user = get_current_user()
+    return dict(
+        is_candidate_ever=is_candidate(user["id"]) if user else False,
+        is_candidate_now=is_candidate_in_active_election(user["id"]) if user else False,
+    )
 
 
 def voting_is_open(election):
