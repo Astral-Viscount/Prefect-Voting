@@ -1,3 +1,21 @@
+/**
+ * charts.js
+ *
+ * Shared Chart.js wrapper used by three near-identical results pages:
+ * admin_results.html (live, polling), candidate_results.html and
+ * voter_results.html (static, closed elections). Each page sets
+ * window.API_RESULTS_BASE to the correct per-role endpoint before this
+ * script runs, so the same chart code can hit different backend routes
+ * depending on who is viewing it.
+ *
+ * Also renders the "click to enlarge" modal chart, and (for the admin
+ * page only) the turnout progress bar.
+ */
+
+// Brand colour palette used for chart series, applied in order. If more
+// candidates exist than colours, get_color() falls back to generating
+// evenly-spaced hues so any number of candidates still get visually
+// distinct colours.
 const PALETTE = [
     "#004E42",
     "#00AB8E",
@@ -7,9 +25,18 @@ const PALETTE = [
     "#8fd6c4"
 ];
 
+// chart_state[position_id] holds everything needed to (re)draw and poll
+// one position's chart: { type, chart, api_base, last_data, modal_open,
+// timer }.
 const chart_state = {};
+// Only one enlarged chart can be open in the modal at a time.
 let modal_chart = null;
 
+/**
+ * Pick a colour for the i-th candidate in a chart.
+ * @param {number} i - zero-based candidate index
+ * @returns {string} a CSS colour string
+ */
 function get_color(i) {
     if (i < PALETTE.length) {
         return PALETTE[i];
@@ -18,6 +45,13 @@ function get_color(i) {
     return `hsl(${hue}, 55%, 42%)`;
 }
 
+/**
+ * Fetch vote-count results for one position from the appropriate
+ * role-specific API endpoint.
+ * @param {number} position_id
+ * @param {string} api_base - e.g. window.API_RESULTS_BASE
+ * @returns {Promise<{position_name: string, candidates: {name:string, votes:number}[], total_votes: number}>}
+ */
 async function fetch_results(position_id, api_base) {
     const res = await fetch(`${api_base}${position_id}`);
 
@@ -28,6 +62,13 @@ async function fetch_results(position_id, api_base) {
     return res.json();
 }
 
+/**
+ * Build a Chart.js config object for either a bar or pie chart from the
+ * same results payload.
+ * @param {"bar"|"pie"} type
+ * @param {object} data - result of fetch_results()
+ * @returns {object} Chart.js configuration
+ */
 function build_chart_config(type, data) {
     return {
         type: type,
@@ -47,10 +88,15 @@ function build_chart_config(type, data) {
             maintainAspectRatio: false,
 
             plugins: {
+                // Pie charts need a legend to identify slices by colour;
+                // bar charts already label each bar via the x-axis.
                 legend: { display: type === "pie" },
                 tooltip: { enabled: true }
             },
 
+            // Bar charts get a y-axis starting at 0 with whole-number
+            // ticks (you can't have half a vote); pie charts don't use
+            // axes at all.
             scales: type === "bar" ? {
                 y: { beginAtZero: true, ticks: { precision: 0 } }
             } : {}
@@ -58,6 +104,13 @@ function build_chart_config(type, data) {
     };
 }
 
+/**
+ * Destroy any existing chart for a position and draw a fresh one on its
+ * canvas.
+ * @param {number} position_id
+ * @param {"bar"|"pie"} type
+ * @param {object} data - result of fetch_results()
+ */
 function create_chart(position_id, type, data) {
     const canvas = document.getElementById(`chart${position_id}`);
     if (!canvas) return;
@@ -71,6 +124,13 @@ function create_chart(position_id, type, data) {
     chart_state[position_id].chart = new Chart(ctx, build_chart_config(type, data));
 }
 
+/**
+ * Fetch the latest results for one position and redraw its chart (and
+ * the enlarged modal chart, if that position's modal happens to be
+ * open). Called once immediately and then on every poll interval for
+ * live (admin) charts.
+ * @param {number} position_id
+ */
 function render_chart(position_id) {
     const state = chart_state[position_id];
 
@@ -101,6 +161,17 @@ function render_chart(position_id) {
         .catch(err => console.error(err));
 }
 
+/**
+ * Initialise a chart for one position: sets up its state, draws it
+ * immediately, optionally starts polling for live updates, and makes its
+ * wrapper clickable to open the enlarged modal view.
+ * @param {number} position_id
+ * @param {"bar"|"pie"} [default_type="bar"]
+ * @param {{api_base?: string, live?: boolean, poll_ms?: number}} [options]
+ *   live=true (admin results page) polls every poll_ms; live=false
+ *   (candidate/voter results, which never change once an election is
+ *   closed) draws once and stops.
+ */
 function init_live_chart(position_id, default_type = "bar", options = {}) {
     const { api_base = window.API_RESULTS_BASE, live = true, poll_ms = 5000 } = options;
 
@@ -126,17 +197,31 @@ function init_live_chart(position_id, default_type = "bar", options = {}) {
     }
 }
 
+/**
+ * Switch a position's chart between bar/pie (triggered by the <select>
+ * in each results card) and immediately redraw it.
+ * @param {number} position_id
+ * @param {"bar"|"pie"} type
+ */
 function set_chart_type(position_id, type) {
     chart_state[position_id].type = type;
     render_chart(position_id);
 }
 
+/**
+ * Open the enlarged chart modal for one position, using the most
+ * recently fetched data (does not re-fetch).
+ * @param {number} position_id
+ */
 function open_chart_modal(position_id) {
     const state = chart_state[position_id];
     const modal = document.getElementById("chart-modal");
 
     if (!state || !state.last_data || !modal) return;
 
+    // Only one position's modal_open flag should ever be true at once,
+    // so render_chart() knows which (if any) modal chart to keep in sync
+    // while polling.
     Object.values(chart_state).forEach(s => s.modal_open = false);
     state.modal_open = true;
 
@@ -157,6 +242,7 @@ function open_chart_modal(position_id) {
     }
 }
 
+/** Close and tear down the enlarged chart modal. */
 function close_chart_modal() {
     const modal = document.getElementById("chart-modal");
     if (modal) modal.classList.add("hidden");
@@ -169,6 +255,12 @@ function close_chart_modal() {
     }
 }
 
+/**
+ * Fetch and display the turnout bar (admin results page only), then
+ * reschedule itself every 5 seconds - a simple self-repeating poll
+ * rather than setInterval, so a slow request can't stack up overlapping
+ * calls.
+ */
 function render_turnout() {
     fetch(window.TURNOUT_URL)
     .then(r => r.json())
