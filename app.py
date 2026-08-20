@@ -372,9 +372,7 @@ def csrf_protect():
 @app.before_request
 def check_expired_elections():
     sync_election_status()
-
-
-
+    
 
 def user_voted_in_election(user_id, election_id):
     row = query_db("""
@@ -1096,6 +1094,12 @@ def admin_candidates():
                     "That student hasn't logged into the site yet. "
                     "Ask them to sign in once first, or double check "
                     "the spelling.", "error"
+                )
+
+            elif student["is_admin"]:
+                flash(
+                    f"{student['name']} is an administrator and "
+                    "cannot be added as a candidate.", "error"
                 )
 
             else:
