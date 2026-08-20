@@ -1406,12 +1406,21 @@ def admin_positions():
 
         # Remove a role
         elif action == "delete":
+            position_id = request.form.get("position_id")
+            
+            # 1. Delete the child candidates first
+            execute_db(
+                "DELETE FROM Candidates WHERE position_id=?",
+                (position_id,)
+            )
+            
+            # 2. Then delete the parent position
             execute_db(
                 "DELETE FROM Positions WHERE id=?",
-                (request.form.get("position_id"),)
+                (position_id,)
             )
 
-            flash("Position removed.", "info")
+            flash("Position and all associated candidates removed.", "info")
 
         return redirect(url_for("admin_positions", election_id=election_id))
 
