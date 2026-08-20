@@ -248,7 +248,7 @@ html, body {
 
 .error-page {
     text-align: center;
-    color: white;
+    color: var(--bhs-glacier-green);
     padding: 50px 20px 0;
 }
 
