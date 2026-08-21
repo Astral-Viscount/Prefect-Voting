@@ -554,6 +554,7 @@ html, body {
 .footer-bottom p {
     max-width:800px;
     overflow-wrap: anywhere;
+    text-align: left;
 }
 
 .footer-col a:hover {
