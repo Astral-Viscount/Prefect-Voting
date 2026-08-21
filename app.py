@@ -1130,6 +1130,21 @@ def forbidden(error):
     *_required decorators' access-denied case."""
     return render_template("403.html"), 403
 
+@app.errorhandler(500)
+def internal_error(error):
+    """Custom 500 page for unhandled server errors.
+
+    Flask calls this for any uncaught exception once debug mode is off.
+    A DB session left open by a failed request could poison the next
+    query on the same connection, so the transaction is explicitly
+    rolled back here before rendering the error page.
+    """
+    db = getattr(g, "_database", None)
+    if db is not None:
+        db.rollback()
+
+    return render_template("500.html"), 500
+
 
 @app.context_processor
 def inject_csrf_token():
