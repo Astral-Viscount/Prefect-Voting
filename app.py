@@ -1130,6 +1130,7 @@ def forbidden(error):
     *_required decorators' access-denied case."""
     return render_template("403.html"), 403
 
+
 @app.errorhandler(500)
 def internal_error(error):
     """Custom 500 page for unhandled server errors.
@@ -1144,6 +1145,16 @@ def internal_error(error):
         db.rollback()
 
     return render_template("500.html"), 500
+
+
+@app.errorhandler(505)
+def http_version_not_supported(error):
+    """Custom 505 page for HTTP version not supported errors."""
+    db = getattr(g, "_database", None)
+    if db is not None:
+        db.rollback()
+
+    return render_template("505.html"), 505
 
 
 @app.context_processor
