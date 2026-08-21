@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block title %}
+HTTP Version Not Supported
+{% endblock %}
+
+{% block content %}
+
+<div class="error-page">
+    <h1>505</h1>
+    <p>The HTTP version used in the request is not supported by the server.</p>
+    <a href="{{ url_for('home') }}" class="btn glacier">Go home</a>
+</div>
+
+{% endblock %}
